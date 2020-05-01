@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # https://github.com/portableprogrammer/Status-Light/
 
 import webex
@@ -10,7 +9,7 @@ from datetime import datetime
 currentStatus = webex.PersonStatus.unknown
 lastStatus = currentStatus
 
-print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),"Startup")
+print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Startup")
 
 # TODO: Set the light to idle
 # aiotuya.set()
@@ -37,13 +36,14 @@ try:
             currentStatus = webexStatus
             # TODO: Trigger light change
 
-            print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),currentStatus)
+            print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),currentStatus)
 
         # Sleep for a few seconds    
         time.sleep(15)
+except KeyboardInterrupt:
+    pass
+except BaseException as e:
+    print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Exception: ',e)
 
-except:
-    print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),'Exception!')
-
-print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),'Shutdown')
+print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Shutdown')
 # TODO: Trigger light shutdown
