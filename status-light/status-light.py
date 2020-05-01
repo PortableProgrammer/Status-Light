@@ -17,7 +17,7 @@ print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Startup")
 
 # TODO: Set the light to idle
 light = tuya.TuyaLight()
-light.device = os.environn['TUYA_DEVICE']
+light.device = os.environ['TUYA_DEVICE']
 print(light.getStatus())
 
 try:
