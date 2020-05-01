@@ -1,9 +1,13 @@
 # https://github.com/portableprogrammer/Status-Light/
 
-import webex
+# Module imports
 import os
 import time
 from datetime import datetime
+
+# Project imports
+import webex
+import tuya
 
 # TODO: We're using the Webex status globally here, both because it's not bad, and because it was the first module created...
 currentStatus = webex.PersonStatus.unknown
@@ -12,7 +16,9 @@ lastStatus = currentStatus
 print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Startup")
 
 # TODO: Set the light to idle
-# aiotuya.set()
+light = tuya.TuyaLight()
+light.device = os.environn['TUYA_DEVICE']
+print(light.getStatus())
 
 try:
     while True:

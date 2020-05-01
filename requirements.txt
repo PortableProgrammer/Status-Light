@@ -1,4 +1,4 @@
 cryptography
 webexteamssdk
-aiotuya
+tuyaface
 O365
