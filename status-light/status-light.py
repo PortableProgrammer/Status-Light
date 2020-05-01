@@ -4,13 +4,13 @@
 import webex
 import os
 import time
-from datetime import date
+from datetime import datetime
 
 # TODO: We're using the Webex status globally here, both because it's not bad, and because it was the first module created...
 currentStatus = webex.PersonStatus.unknown
 lastStatus = currentStatus
 
-print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),"Startup")
+print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),"Startup")
 
 # TODO: Set the light to idle
 # aiotuya.set()
@@ -37,13 +37,13 @@ try:
             currentStatus = webexStatus
             # TODO: Trigger light change
 
-            print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),currentStatus)
+            print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),currentStatus)
 
         # Sleep for a few seconds    
         time.sleep(15)
 
 except:
-    print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),'Exception!')
+    print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),'Exception!')
 
-print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),'Shutdown')
+print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),'Shutdown')
 # TODO: Trigger light shutdown
