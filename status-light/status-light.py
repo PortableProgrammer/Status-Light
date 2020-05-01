@@ -20,5 +20,3 @@ webexStatus = webexAPI.getPersonStatus(personID)
 # Set the Calendar first, then let Webex override it
 
 print(webexStatus)
-
-# 
