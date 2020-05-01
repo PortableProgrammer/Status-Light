@@ -4,6 +4,16 @@
 import webex
 import os
 import time
+from datetime import date
+
+# TODO: We're using the Webex status globally here, both because it's not bad, and because it was the first module created...
+currentStatus = webex.PersonStatus.unknown
+lastStatus = currentStatus
+
+print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),"Startup")
+
+# TODO: Set the light to idle
+# aiotuya.set()
 
 try:
     while True:
@@ -13,17 +23,27 @@ try:
         webexAPI.botKey = os.environ['WEBEX_BOTID']
         webexStatus = webexAPI.getPersonStatus(personID)
 
-        # O365 Status (based on calendar)
+        # TODO: O365 Status (based on calendar)
 
         # Take the statii and determine what we care about most
         # White/Green/Off when available
         # Blue when in a meeting (Calendar)
         # Red when on a call or DnD (due to the way that Teams handles status priorities) - This takes priority over calendar
 
-        # Set the Calendar first, then let Webex override it
+        # TODO: Set the Calendar first, then let Webex override it
 
-        print(webexStatus)
+        if not webexStatus == currentStatus:
+            lastStatus = currentStatus
+            currentStatus = webexStatus
+            # TODO: Trigger light change
+
+            print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),currentStatus)
+
+        # Sleep for a few seconds    
         time.sleep(15)
 
 except:
-    print('Exception!')
+    print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),'Exception!')
+
+print(date.now().strftime("[%y-%m-%d %H:%M:%S] "),'Shutdown')
+# TODO: Trigger light shutdown
