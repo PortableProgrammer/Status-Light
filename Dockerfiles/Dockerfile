@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./status-light .
 
 # Start the app 
-CMD [ "python", "./status-light.py" ]
+CMD [ "python", "-u", "./status-light.py" ]
