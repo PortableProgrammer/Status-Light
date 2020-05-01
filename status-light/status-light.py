@@ -10,7 +10,7 @@ from datetime import datetime
 currentStatus = webex.PersonStatus.unknown
 lastStatus = currentStatus
 
-print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),"Startup")
+print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),"Startup")
 
 # TODO: Set the light to idle
 # aiotuya.set()
@@ -32,18 +32,18 @@ try:
 
         # TODO: Set the Calendar first, then let Webex override it
 
-        if not webexStatus == currentStatus:
+        if webexStatus != currentStatus:
             lastStatus = currentStatus
             currentStatus = webexStatus
             # TODO: Trigger light change
 
-            print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),currentStatus)
+            print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),currentStatus)
 
         # Sleep for a few seconds    
         time.sleep(15)
 
 except:
-    print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),'Exception!')
+    print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),'Exception!')
 
-print(datetime.now().strftime("[%y-%m-%d %H:%M:%S] "),'Shutdown')
+print(datetime.now().strftime("[%yy-%m-%d %H:%M:%S] "),'Shutdown')
 # TODO: Trigger light shutdown
