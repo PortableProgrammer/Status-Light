@@ -8,22 +8,24 @@ from datetime import datetime
 
 class TuyaLight:
     device = ''
-    RED = "{ '1': 1, "
+    RED = 'ff00000000ffff'
     YELLOW = ''
     ORANGE = ''
-    GREEN = ''
-    BLUE = ''
-    WHITE = ''
+    GREEN = '00ff000000ffff'
+    BLUE = '0000ff0000ffff'
     currentState = ""
 
     def on(self):
-        tuyaface.set_state(self.device, True)
+        return tuyaface.set_state(self.device, True)
 
     def off(self):
-        tuyaface.set_state(self.device, False)
+        return tuyaface.set_state(self.device, False)
+
+    def setSingleState(self, index, value):
+        return tuyaface.set_status(self.device, {index: value})
 
     def transitionTo(self, toState):
-        tuyaface.set_status(self.device, toState)
+        return tuyaface.set_status(self.device, toState)
 
     def getStatus(self):
         return tuyaface.status(self.device)

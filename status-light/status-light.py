@@ -18,7 +18,21 @@ print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Startup")
 # TODO: Set the light to idle
 light = tuya.TuyaLight()
 light.device = eval(os.environ['TUYA_DEVICE'])
-print(light.getStatus())
+
+print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Turning light on")
+light.on()
+print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Transitioning to a random color at a random brightness")
+import random
+brightness = random.randint(32,128)
+print("    Random brightness: ", brightness)
+colors = [ "ff00000000ffff", "00ff000000ffff", "0000ff0000ffff" ]
+color = colors[random.randint(0,2)]
+print("    Random color: ", color)    
+#result = light.transitionTo(eval("{ '1': 1, '2': 'colour', '3': " + str(brightness) + ", '5': '" + color + "' }"))
+#print(" Transition result: ", result)
+#light.setState(2, 'colour')
+#light.setState(3, brightness)
+#light.setState(5, color)
 
 try:
     while True:
@@ -51,5 +65,7 @@ except KeyboardInterrupt:
 except BaseException as e:
     print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Exception: ',e)
 
-print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Shutdown')
+print("\n",datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Shutdown')
 # TODO: Trigger light shutdown
+print("    Turning light off")
+light.off()
