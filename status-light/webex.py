@@ -2,6 +2,7 @@
 
 import enum
 from webexteamssdk import WebexTeamsAPI
+import const
 
 class WebexAPI:
     botKey = ""
@@ -9,7 +10,8 @@ class WebexAPI:
     def getPersonStatus(self, personId):
         api = WebexTeamsAPI(access_token = self.botKey)
         try:
-            return PersonStatus[api.people.get(personId).status]
+            #return PersonStatus[api.people.get(personId).status]
+            return const.Status[api.people.get(personId).status]
         except:
             return "unknown"
 

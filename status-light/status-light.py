@@ -7,32 +7,32 @@ from datetime import datetime
 
 # Project imports
 import webex
+import office365
 import tuya
+import const
 
-# TODO: We're using the Webex status globally here, both because it's not bad, and because it was the first module created...
-currentStatus = webex.PersonStatus.unknown
+currentStatus = const.Status.unknown
 lastStatus = currentStatus
 
 print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Startup")
 
-# TODO: Set the light to idle
 light = tuya.TuyaLight()
 light.device = eval(os.environ['TUYA_DEVICE'])
+light.transitionStatus(currentStatus)
 
-print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Turning light on")
-light.on()
-print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Transitioning to a random color at a random brightness")
-import random
-brightness = random.randint(32,128)
-print("    Random brightness: ", brightness)
-colors = [ "ff00000000ffff", "00ff000000ffff", "0000ff0000ffff" ]
-color = colors[random.randint(0,2)]
-print("    Random color: ", color)    
-#result = light.transitionTo(eval("{ '1': 1, '2': 'colour', '3': " + str(brightness) + ", '5': '" + color + "' }"))
-#print(" Transition result: ", result)
-#light.setState(2, 'colour')
-#light.setState(3, brightness)
-#light.setState(5, color)
+# TODO: Test code, remove once comfortable
+#print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Transitioning to a random color at a random brightness")
+#import random
+#brightness = random.randint(32,128)
+#print("    Random brightness: ", brightness)
+#colors = [ "ff00000000ffff", "00ff000000ffff", "0000ff0000ffff" ]
+#color = colors[random.randint(0,2)]
+#print("    Random color: ", color)    
+#light.setSingleState(3, brightness)
+#light.setSingleState(5, color)
+#light.setSingleState(2, 'colour')
+#print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Turning light on")
+#light.on()
 
 try:
     while True:
@@ -43,20 +43,18 @@ try:
         webexStatus = webexAPI.getPersonStatus(personID)
 
         # TODO: O365 Status (based on calendar)
-
-        # Take the statii and determine what we care about most
-        # White/Green/Off when available
-        # Blue when in a meeting (Calendar)
-        # Red when on a call or DnD (due to the way that Teams handles status priorities) - This takes priority over calendar
-
-        # TODO: Set the Calendar first, then let Webex override it
-
+        officeAPI = office365.OfficeAPI()
+        office365.appID = os.environ['O365_APPID']
+        office365.appSecret = os.environ['O365_APPSECRET']
+        
+        # TODO: Compare statii and emerge a winner
+        
         if webexStatus != currentStatus:
             lastStatus = currentStatus
             currentStatus = webexStatus
-            # TODO: Trigger light change
 
             print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),currentStatus)
+            light.transitionStatus(currentStatus)
 
         # Sleep for a few seconds    
         time.sleep(15)

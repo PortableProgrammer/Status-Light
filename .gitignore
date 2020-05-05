@@ -1,0 +1,5 @@
+__pycache__
+build/
+dist/
+status-light/__pycache__
+status-light.egg-info/

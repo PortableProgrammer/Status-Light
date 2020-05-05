@@ -1,0 +1,3 @@
+bitstring
+pyaes
+pycrypto

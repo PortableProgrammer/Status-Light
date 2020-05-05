@@ -1,4 +1,4 @@
-cryptography
+pycryptodomex
 webexteamssdk
 tuyaface
 O365
