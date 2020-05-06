@@ -68,7 +68,7 @@ try:
             logger.info('Transitioning to %s',currentStatus)
             light.transitionStatus(currentStatus)
         else:
-            print('.', end='')
+            print('.', end='', flush=True)
             needNewline = True
 
         # Sleep for a few seconds    
