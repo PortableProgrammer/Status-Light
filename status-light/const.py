@@ -1,18 +1,23 @@
 import enum
 
 class Status(enum.Enum):
+    unknown = 0
+
+    # Webex
     active = 1
     call = 2
     DoNotDisturb = 3
     inactive = 4
     meeting = 5
-    CalendarMeeting = 6
-    OutOfOffice = 7
-    pending = 8
-    presenting = 9
-    unknown = 10
+    OutOfOffice = 6
+    pending = 7
+    presenting = 8
 
-OFF = [Status.inactive, Status.OutOfOffice, Status.unknown]
+    #Office
+    free = 9
+    busy = 10
+
+OFF = [Status.inactive, Status.OutOfOffice, Status.unknown, Status.free]
 GREEN = [Status.active]
-YELLOW = [Status.CalendarMeeting]
+YELLOW = [Status.busy]
 RED = [Status.call, Status.DoNotDisturb, Status.meeting, Status.presenting]

@@ -5,7 +5,12 @@ from tuyaface import const as tf
 import os
 import time
 from datetime import datetime
+import logging
+
+# Project imports
 import const
+
+logger = logging.getLogger(__name__)
 
 class TuyaLight:
     device = ''
@@ -29,7 +34,7 @@ class TuyaLight:
                 return tuyaface.set_status(self.device, {index: value})
                 count = retry # Break the loop
             except BaseException as e:
-                print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Exception during setSingleState: ',e)
+                logger.warn('Exception during setSingleState:',e)
                 count = count + 1
                 time.sleep(1)
 

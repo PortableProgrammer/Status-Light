@@ -1,6 +1,14 @@
 # https://github.com/portableprogrammer/Status-Light/
 
 from O365 import Account
+from datetime import datetime 
+from datetime import timedelta
+import logging
+
+# Project imports
+import const
+
+logger = logging.getLogger(__name__)
 
 class OfficeAPI:
     appID = ''
@@ -8,8 +16,27 @@ class OfficeAPI:
     account = None
 
     def authenticate(self):
-        credentials = (appID, appSecret)
+        self.account = Account((self.appID, self.appSecret))
+        if not self.account.is_authenticated:
+            self.account.authenticate(scopes=['basic', 'calendar'])
 
-        account = Account(credentials)
-        if account.authenticate(scopes=['basic', 'calendar']):
-            print('Authenticated!')
+    def getSchedule(self):
+        self.authenticate()
+        return self.account.schedule()
+
+    def getCalendar(self):
+        self.authenticate()
+        return self.account.schedule().get_default_calendar()
+
+    def getCurrentStatus(self):
+        try: 
+            schedule = self.getSchedule()
+            schedules = [self.account.get_current_user().mail]
+            availability = schedule.get_availability(schedules, datetime.now(), datetime.now() + timedelta(minutes=5), 5)
+            availabilityView = availability[0]["availabilityView"][0]
+            logger.debug('Got availabilityView: %s', availabilityView)
+            return const.Status[availabilityView]
+        except BaseException as e:
+            logger.warn('Exception during OfficeAPI.getCurrentStatus: %s',e)
+            # TODO: Don't be stupid, fix this
+            return const.Status.unknown

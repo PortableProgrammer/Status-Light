@@ -3,6 +3,7 @@
 # Module imports
 import os
 import time
+import logging
 from datetime import datetime
 
 # Project imports
@@ -14,25 +15,25 @@ import const
 currentStatus = const.Status.unknown
 lastStatus = currentStatus
 
-print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Startup")
+# TODO: Dynamic logging level
+logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='[%Y-%m-%d %H:%M:%S]', level=logging.WARNING)
+logger = logging.getLogger(__name__)
+
+logger.info('Startup')
+print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Startup')
+
+# TODO: Gather and validate environment variables in a structured way
+# Webex
+# Office365
+# Tuya
 
 light = tuya.TuyaLight()
 light.device = eval(os.environ['TUYA_DEVICE'])
+logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
+
 light.transitionStatus(currentStatus)
 
-# TODO: Test code, remove once comfortable
-#print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Transitioning to a random color at a random brightness")
-#import random
-#brightness = random.randint(32,128)
-#print("    Random brightness: ", brightness)
-#colors = [ "ff00000000ffff", "00ff000000ffff", "0000ff0000ffff" ]
-#color = colors[random.randint(0,2)]
-#print("    Random color: ", color)    
-#light.setSingleState(3, brightness)
-#light.setSingleState(5, color)
-#light.setSingleState(2, 'colour')
-#print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),"Turning light on")
-#light.on()
+needNewline = False
 
 try:
     while True:
@@ -42,28 +43,42 @@ try:
         webexAPI.botKey = os.environ['WEBEX_BOTID']
         webexStatus = webexAPI.getPersonStatus(personID)
 
-        # TODO: O365 Status (based on calendar)
+        # O365 Status (based on calendar)
         officeAPI = office365.OfficeAPI()
-        office365.appID = os.environ['O365_APPID']
-        office365.appSecret = os.environ['O365_APPSECRET']
+        officeAPI.appID = os.environ['O365_APPID']
+        officeAPI.appSecret = os.environ['O365_APPSECRET']
+        officeAPI.authenticate()
+        officeStatus = officeAPI.getCurrentStatus()
         
-        # TODO: Compare statii and emerge a winner
+        # Compare statii and emerge a winner
+        logger.debug('Webex: %s | Office: %s', webexStatus, officeStatus)
+        currentStatus = webexStatus
+        if webexStatus in const.GREEN and officeStatus not in const.OFF:
+            logger.debug('Using officeStatus: %s', officeStatus)
+            currentStatus = officeStatus
         
-        if webexStatus != currentStatus:
+        if lastStatus != currentStatus:
             lastStatus = currentStatus
-            currentStatus = webexStatus
 
-            print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),currentStatus)
+            if needNewline:
+                print('')
+                needNewline = False
+
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Found new status:',currentStatus)
+            logger.info('Transitioning to %s',currentStatus)
             light.transitionStatus(currentStatus)
+        else:
+            print('.', end='')
+            needNewline = True
 
         # Sleep for a few seconds    
-        time.sleep(15)
+        time.sleep(5)
 except KeyboardInterrupt:
     pass
 except BaseException as e:
-    print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Exception: ',e)
+    logger.warn('Exception during main loop: %s', e)
 
-print("\n",datetime.now().strftime("[%Y-%m-%d %H:%M:%S] "),'Shutdown')
-# TODO: Trigger light shutdown
-print("    Turning light off")
+print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Shutdown')
+logger.info('Shutdown')
+logger.debug('Turning light off')
 light.off()
