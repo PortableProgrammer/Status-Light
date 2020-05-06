@@ -37,6 +37,6 @@ class OfficeAPI:
             logger.debug('Got availabilityView: %s', availabilityView)
             return const.Status[availabilityView]
         except BaseException as e:
-            logger.warn('Exception during OfficeAPI.getCurrentStatus: %s',e)
+            logger.warning('Exception during OfficeAPI.getCurrentStatus: %s',e)
             # TODO: Don't be stupid, fix this
             return const.Status.unknown

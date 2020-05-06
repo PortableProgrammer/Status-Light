@@ -33,8 +33,6 @@ logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 
 light.transitionStatus(currentStatus)
 
-needNewline = False
-
 try:
     while True:
         # Webex Status
@@ -60,24 +58,21 @@ try:
         if lastStatus != currentStatus:
             lastStatus = currentStatus
 
-            if needNewline:
-                print('')
-                needNewline = False
-
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Found new status:',currentStatus)
+            print()
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Found new status:',currentStatus, end='', flush=True)
             logger.info('Transitioning to %s',currentStatus)
             light.transitionStatus(currentStatus)
         else:
             print('.', end='', flush=True)
-            needNewline = True
 
         # Sleep for a few seconds    
         time.sleep(5)
 except KeyboardInterrupt:
     pass
 except BaseException as e:
-    logger.warn('Exception during main loop: %s', e)
+    logger.warning('Exception during main loop: %s', e)
 
+print()
 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Shutdown')
 logger.info('Shutdown')
 logger.debug('Turning light off')

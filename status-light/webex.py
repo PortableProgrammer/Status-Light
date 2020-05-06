@@ -17,5 +17,5 @@ class WebexAPI:
         try:
             return const.Status[api.people.get(personId).status]
         except BaseException as e:
-            logger.warn('Exception during getPersonStatus:',e)
+            logger.warning('Exception during getPersonStatus:',e)
             return "unknown"

@@ -34,7 +34,7 @@ class TuyaLight:
                 return tuyaface.set_status(self.device, {index: value})
                 count = retry # Break the loop
             except BaseException as e:
-                logger.warn('Exception during setSingleState:',e)
+                logger.warning('Exception during setSingleState:',e)
                 count = count + 1
                 time.sleep(1)
 
