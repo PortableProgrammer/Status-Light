@@ -19,5 +19,5 @@ class Status(enum.Enum):
 
 OFF = [Status.inactive, Status.OutOfOffice, Status.unknown, Status.free]
 GREEN = [Status.active]
-YELLOW = [Status.busy]
+ORANGE = [Status.busy]
 RED = [Status.call, Status.DoNotDisturb, Status.meeting, Status.presenting]

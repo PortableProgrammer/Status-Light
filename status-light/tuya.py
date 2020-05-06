@@ -71,8 +71,8 @@ class TuyaLight:
         if status in const.GREEN:
             self.setState('colour', self.GREEN)
 
-        if status in const.YELLOW:
-            self.setState('colour', self.YELLOW)
+        if status in const.ORANGE:
+            self.setState('colour', self.ORANGE)
 
         if status in const.RED: 
             self.setState('colour', self.RED)
