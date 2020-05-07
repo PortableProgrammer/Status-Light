@@ -16,7 +16,7 @@ class TuyaLight:
     device = ''
     RED = 'ff00000000ffff'
     YELLOW = 'ffff000000ffff'
-    ORANGE = 'ffa5000000ffff'
+    ORANGE = 'ff90000000ffff'
     GREEN = '00ff000000ffff'
     BLUE = '0000ff0000ffff'
 
