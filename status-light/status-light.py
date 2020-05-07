@@ -50,8 +50,12 @@ try:
         
         # Compare statii and emerge a winner
         logger.debug('Webex: %s | Office: %s', webexStatus, officeStatus)
+
+        # Webex status always wins except in specific scenarios
         currentStatus = webexStatus
-        if webexStatus in const.GREEN and officeStatus not in const.OFF:
+
+        # If we're "GREEN" or "OFF" for Webex, but not Office, use the office status
+        if (webexStatus in const.GREEN or webexStatus in const.OFF) and officeStatus not in const.OFF:
             logger.debug('Using officeStatus: %s', officeStatus)
             currentStatus = officeStatus
         
