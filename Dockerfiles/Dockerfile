@@ -1,5 +1,8 @@
 FROM python:3
 
+RUN mkdir /data
+VOLUME /data
+
 WORKDIR /usr/src/status-light
 
 # Install dependencies

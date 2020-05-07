@@ -16,7 +16,8 @@ class OfficeAPI:
     account = None
 
     def authenticate(self):
-        self.account = Account((self.appID, self.appSecret))
+        token_backend = FileSystemTokenBackend(token_path='/data', token_filename='o365_token.txt')
+        self.account = Account((self.appID, self.appSecret), token_backend=token_backend)
         if not self.account.is_authenticated:
             self.account.authenticate(scopes=['basic', 'calendar'])
 
