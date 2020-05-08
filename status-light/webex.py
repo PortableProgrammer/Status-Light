@@ -10,12 +10,12 @@ import const
 logger = logging.getLogger(__name__)
 
 class WebexAPI:
-    botKey = ""
+    botID = ""
 
-    def getPersonStatus(self, personId):
-        api = WebexTeamsAPI(access_token = self.botKey)
+    def getPersonStatus(self, personID):
+        api = WebexTeamsAPI(access_token = self.botID)
         try:
-            return const.Status[api.people.get(personId).status]
+            return const.Status[api.people.get(personID).status]
         except BaseException as e:
-            logger.warning('Exception during getPersonStatus:',e)
+            logger.warning('Exception during getPersonStatus: %s',e)
             return "unknown"

@@ -1,16 +1,18 @@
 # https://github.com/portableprogrammer/Status-Light/
 
 # Module imports
+import sys
+import signal
 import os
 import time
 import logging
 from datetime import datetime
-import signal
 
 # Project imports
 import webex
 import office365
 import tuya
+import env
 import const
 
 currentStatus = const.Status.unknown
@@ -36,7 +38,7 @@ def receiveSignal(signalNumber, frame):
 # SIGTERM should be handled special
 def receiveTerminate(signalNumber, frame):
     logger.warning('SIGTERM received, terminating immediately')
-    sys.exit()
+    sys.exit(0)
     
 signals = [signal.SIGHUP, signal.SIGINT, signal.SIGQUIT]
 for sig in signals:
@@ -44,30 +46,34 @@ for sig in signals:
 signal.signal(signal.SIGTERM, receiveTerminate)
 
 # TODO: Gather and validate environment variables in a structured way
+localEnv = env.Environment()
+if False in [localEnv.getTuya(), localEnv.getWebex(), localEnv.getOffice()]:
+    # We failed to gather some environment variables
+    logger.warning('Failed to find all environment variables!')
+    sys.exit(1)
 
 # Tuya
 light = tuya.TuyaLight()
-light.device = eval(os.environ['TUYA_DEVICE'])
+light.device = eval(localEnv.tuyaDevice)
 logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 # TODO: Connect to the device and ensure it's available
 #light.getCurrentStatus()
 
 # Webex
-personID = os.environ['WEBEX_PERSONID']
 webexAPI = webex.WebexAPI()
-webexAPI.botKey = os.environ['WEBEX_BOTID']
+webexAPI.botID = localEnv.webexBotID
 
 # Office365 
 officeAPI = office365.OfficeAPI()
-officeAPI.appID = os.environ['O365_APPID']
-officeAPI.appSecret = os.environ['O365_APPSECRET']
-officeAPI.tokenStore = os.environ['O365_TOKENSTORE']
+officeAPI.appID = localEnv.officeAppID
+officeAPI.appSecret = localEnv.officeAppSecret
+officeAPI.tokenStore = localEnv.officeTokenStore
 officeAPI.authenticate()
 
 while shouldContinue:
     try:
         # Webex Status
-        webexStatus = webexAPI.getPersonStatus(personID)
+        webexStatus = webexAPI.getPersonStatus(localEnv.webexPersonID)
 
         # O365 Status (based on calendar)
         officeStatus = officeAPI.getCurrentStatus()
