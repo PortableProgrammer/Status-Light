@@ -6,3 +6,4 @@ dist/
 status-light/__pycache__
 status-light.egg-info/
 tuyaface.egg-info/
+.devcontainer/
