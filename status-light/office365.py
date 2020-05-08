@@ -1,6 +1,7 @@
 # https://github.com/portableprogrammer/Status-Light/
 
 from O365 import Account
+from O365 import FileSystemTokenBackend
 from datetime import datetime 
 from datetime import timedelta
 import logging
@@ -13,13 +14,14 @@ logger = logging.getLogger(__name__)
 class OfficeAPI:
     appID = ''
     appSecret = ''
+    tokenStore = '~'
     account = None
 
     def authenticate(self):
-        token_backend = FileSystemTokenBackend(token_path='/data', token_filename='o365_token.txt')
-        self.account = Account((self.appID, self.appSecret), token_backend=token_backend)
+        token_backend = FileSystemTokenBackend(token_path = self.tokenStore, token_filename = 'o365_token.txt')
+        self.account = Account((self.appID, self.appSecret), token_backend = token_backend)
         if not self.account.is_authenticated:
-            self.account.authenticate(scopes=['basic', 'calendar'])
+            self.account.authenticate(scopes = ['basic', 'calendar'])
 
     def getSchedule(self):
         self.authenticate()

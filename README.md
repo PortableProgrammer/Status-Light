@@ -6,6 +6,7 @@ To retreive your TUYA_DEVICE credentials, follow [codetheweb's](https://github.c
 
 ## Office365 setup
 To retrieve your O365_APPID and O365_APPSECRET creds, follow [Python O365's](https://github.com/O365) [usage and authentication guide](https://github.com/O365/python-o365#usage).
+An optional variable, O365_TOKENSTORE, defines a writable location on disk where the Office365 tokens are stored. This location should be protected from other users. The default is '~'.
 
 ## Webex setup
 This retrieve your WEBEX_PERSONID and WEBEX_BOTID creds, follow see below:
