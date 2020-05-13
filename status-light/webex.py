@@ -16,6 +16,8 @@ class WebexAPI:
         api = WebexTeamsAPI(access_token = self.botID)
         try:
             return const.Status[api.people.get(personID).status]
+        except (SystemExit, KeyboardInterrupt):
+            pass
         except BaseException as e:
             logger.warning('Exception during getPersonStatus: %s',e)
             return "unknown"

@@ -29,7 +29,7 @@ class Environment:
         return (None not in [self.webexPersonID, self.webexBotID])
 
     def getOffice(self):
-        self.officeAppId = os.environ.get(self.O365_APPID, None)
+        self.officeAppID = os.environ.get(self.O365_APPID, None)
         self.officeAppSecret = os.environ.get(self.O365_APPSECRET, None)
         self.officeTokenStore = os.environ.get(self.O365_TOKENSTORE, '~')
-        return (None not in [self.officeAppId, self.officeAppSecret, self.officeTokenStore])
+        return (None not in [self.officeAppID, self.officeAppSecret, self.officeTokenStore])

@@ -33,8 +33,10 @@ class TuyaLight:
             try:
                 return tuyaface.set_status(self.device, {index: value})
                 count = retry # Break the loop
+            except (SystemExit, KeyboardInterrupt):
+                count = retry # Break the loop
             except BaseException as e:
-                logger.warning('Exception during setSingleState:',e)
+                logger.warning('Exception during setSingleState: %s',e)
                 count = count + 1
                 time.sleep(1)
 

@@ -39,6 +39,8 @@ class OfficeAPI:
             availabilityView = availability[0]["availabilityView"][0]
             logger.debug('Got availabilityView: %s', availabilityView)
             return const.Status[availabilityView]
+        except (SystemExit, KeyboardInterrupt):
+            return const.Status.unknown
         except BaseException as e:
             logger.warning('Exception during OfficeAPI.getCurrentStatus: %s',e)
             # TODO: Don't be stupid, fix this
