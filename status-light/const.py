@@ -16,8 +16,9 @@ class Status(enum.Enum):
     #Office
     free = 9
     busy = 10
+    tentative = 11
 
 OFF = [Status.inactive, Status.OutOfOffice, Status.unknown, Status.free]
 GREEN = [Status.active]
-ORANGE = [Status.busy]
+ORANGE = [Status.busy, Status.tentative]
 RED = [Status.call, Status.DoNotDisturb, Status.meeting, Status.presenting]
