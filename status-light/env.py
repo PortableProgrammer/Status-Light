@@ -20,16 +20,16 @@ class Environment:
     O365_TOKENSTORE = 'O365_TOKENSTORE'
 
     def getTuya(self):
-        tuyaDevice = os.environ.get(self.TUYA_DEVICE, None)
-        return (None not in [tuyaDevice])
+        self.tuyaDevice = os.environ.get(self.TUYA_DEVICE, None)
+        return (None not in [self.tuyaDevice])
 
     def getWebex(self):
-        webexPersonID = os.environ.get(self.WEBEX_PERSONID, None)
-        webexBotID = os.environ.get(self.WEBEX_BOTID, None)
-        return (None not in [webexPersonID, webexBotID])
+        self.webexPersonID = os.environ.get(self.WEBEX_PERSONID, None)
+        self.webexBotID = os.environ.get(self.WEBEX_BOTID, None)
+        return (None not in [self.webexPersonID, self.webexBotID])
 
     def getOffice(self):
-        officeAppId = os.environ.get(self.O365_APPID, None)
-        officeAppSecret = os.environ.get(self.O365_APPSECRET, None)
-        officeTokenStore = os.environ.get(self.O365_TOKENSTORE, '~')
-        return (None not in [officeAppId, officeAppSecret, officeTokenStore])
+        self.officeAppId = os.environ.get(self.O365_APPID, None)
+        self.officeAppSecret = os.environ.get(self.O365_APPSECRET, None)
+        self.officeTokenStore = os.environ.get(self.O365_TOKENSTORE, '~')
+        return (None not in [self.officeAppId, self.officeAppSecret, self.officeTokenStore])
