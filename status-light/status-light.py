@@ -38,6 +38,7 @@ def receiveSignal(signalNumber, frame):
 # SIGTERM should be handled special
 def receiveTerminate(signalNumber, frame):
     logger.warning('SIGTERM received, terminating immediately')
+    global sys
     sys.exit(0)
     
 signals = [signal.SIGHUP, signal.SIGINT, signal.SIGQUIT]
@@ -98,6 +99,10 @@ while shouldContinue:
 
         # Sleep for a few seconds    
         time.sleep(5)
+    except SystemExit:
+        logger.info('SystemExit received; shutting down...')
+    except KeyboardInterrupt:
+        logger.info('KeyboardInterrupt received; shutting down...')
     except BaseException as e:
         logger.warning('Exception during main loop: %s', e)
 
