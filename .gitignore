@@ -6,3 +6,4 @@ build/
 dist/
 status-light/__pycache__
 *.egg-info/
+.DS_Store
