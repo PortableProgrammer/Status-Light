@@ -38,6 +38,15 @@ class OfficeAPI:
             availability = schedule.get_availability(schedules, datetime.now(), datetime.now() + timedelta(minutes=5), 5)
             availabilityView = availability[0]["availabilityView"][0]
             logger.debug('Got availabilityView: %s', availabilityView)
+
+            # Issue #3: Handle all O365 Statuses
+            # The OutOfOffice status is returned as a string with spaces, unlike the rest of the statuses, so we need to treat it special
+            if availabilityView == 'out of office':
+                availabilityView = 'OutOfOffice'
+            # The WorkingElsewhere status is returned as a string with spaces, unlike the rest of the statuses, so we need to treat it special
+            if availabilityView == 'working elsewhere':
+                availabilityView = 'WorkingElsewhere'
+
             return const.Status[availabilityView]
         except (SystemExit, KeyboardInterrupt):
             return const.Status.unknown

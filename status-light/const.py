@@ -9,14 +9,15 @@ class Status(enum.Enum):
     DoNotDisturb = 3
     inactive = 4
     meeting = 5
-    OutOfOffice = 6
-    pending = 7
-    presenting = 8
+    pending = 6
+    presenting = 7
 
     #Office
-    free = 9
+    free = 8
+    tentative = 9
     busy = 10
-    tentative = 11
+    OutOfOffice = 11
+    WorkingElsewhere = 12
 
 OFF = [Status.inactive, Status.OutOfOffice, Status.unknown, Status.free]
 GREEN = [Status.active]
