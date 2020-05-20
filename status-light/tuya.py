@@ -29,16 +29,17 @@ class TuyaLight:
     def setSingleState(self, index, value, retry: int = 5):
         # We sometimes get a connection reset, or other errors, so let's retry after a second
         count = 0
-        while (True and count < retry):
+        status = None
+        while (status == None and count < retry):
             try:
-                return tuyaface.set_status(self.device, {index: value})
-                count = retry # Break the loop
+                status = tuyaface.set_status(self.device, {index: value})
             except (SystemExit, KeyboardInterrupt):
                 count = retry # Break the loop
             except BaseException as e:
                 logger.warning('Exception during setSingleState: %s',e)
                 count = count + 1
                 time.sleep(1)
+        return status
 
     def setState(self, mode = 'white', color = 'ffffff0000ffff', brightness: int = 128):
         # DPS:
@@ -48,15 +49,14 @@ class TuyaLight:
         # 5: Color, 'rrggbb0000ffff'
 
         # Light must be on (so we'll do that first)
-        # Brightness can be set whenever (so we'll do that next)
+        # Brightness should be next
         # Color must be before Mode
+
         self.on()
         self.setSingleState(3, brightness)
         self.setSingleState(5, color)
         self.setSingleState(2, mode)
 
-        # NOTE: Ideally, we should be able to do something like the below, but it doesn't seem to work for my devices
-        # tuyaface.set_status(self.device, {1: True, 2: mode, 3: brightness, 5: color})
 
     def getStatus(self):
         return tuyaface.status(self.device)
