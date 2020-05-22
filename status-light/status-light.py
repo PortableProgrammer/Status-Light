@@ -29,7 +29,7 @@ print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Startup')
 # At the moment, we'll treat them all (but SIGTERM) the same and exit
 shouldContinue = True
 def receiveSignal(signalNumber, frame):
-    logger.warning('Signal received: %s', signalNumber)
+    logger.warning('\nSignal received: %s', signalNumber)
     # TODO: Make better choices here, this is really a hack
     global shouldContinue
     shouldContinue = False
@@ -37,7 +37,7 @@ def receiveSignal(signalNumber, frame):
 
 # SIGTERM should be handled special
 def receiveTerminate(signalNumber, frame):
-    logger.warning('SIGTERM received, terminating immediately')
+    logger.warning('\nSIGTERM received, terminating immediately')
     sys.exit(0)
     
 signals = [signal.SIGHUP, signal.SIGINT, signal.SIGQUIT]
@@ -45,9 +45,9 @@ for sig in signals:
     signal.signal(sig, receiveSignal)
 signal.signal(signal.SIGTERM, receiveTerminate)
 
-# TODO: Gather and validate environment variables in a structured way
+# TODO: Validate environment variables in a structured way
 localEnv = env.Environment()
-if False in [localEnv.getTuya(), localEnv.getWebex(), localEnv.getOffice()]:
+if False in [localEnv.getTuya(), localEnv.getWebex(), localEnv.getOffice(), localEnv.getColors(), localEnv.getStatus()]:
     # We failed to gather some environment variables
     logger.warning('Failed to find all environment variables!')
     sys.exit(1)
@@ -82,7 +82,7 @@ while shouldContinue:
         logger.debug('Webex: %s | Office: %s', webexStatus, officeStatus)
         # Webex status always wins except in specific scenarios
         currentStatus = webexStatus
-        if (webexStatus in const.GREEN or webexStatus in const.OFF) and officeStatus not in const.OFF:
+        if (webexStatus in localEnv.availableStatus or webexStatus in localEnv.offStatus) and officeStatus not in localEnv.offStatus:
             logger.debug('Using officeStatus: %s', officeStatus)
             currentStatus = officeStatus
         
@@ -92,7 +92,7 @@ while shouldContinue:
             print()
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Found new status:',currentStatus, end='', flush=True)
             logger.info('Transitioning to %s',currentStatus)
-            light.transitionStatus(currentStatus)
+            light.transitionStatus(currentStatus, localEnv)
         else:
             print('.', end='', flush=True)
 
