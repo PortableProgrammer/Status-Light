@@ -1,35 +1,89 @@
 import os
+import re
 import logging
+
+import const
+import util
 
 logger = logging.getLogger(__name__)
 
 class Environment:
     tuyaDevice = None
-    TUYA_DEVICE = 'TUYA_DEVICE'
+    tuyaBrightness = 128
 
     webexPersonID = None
     webexBotID = None
-    WEBEX_PERSONID = 'WEBEX_PERSONID'
-    WEBEX_BOTID = 'WEBEX_BOTID'
 
     officeAppID = None
     officeAppSecret = None
-    officeTokenStore = None
-    O365_APPID = 'O365_APPID'
-    O365_APPSECRET = 'O365_APPSECRET'
-    O365_TOKENSTORE = 'O365_TOKENSTORE'
+    officeTokenStore = '~'
+
+    offStatus = [const.Status.inactive, const.Status.outofoffice, const.Status.unknown, const.Status.free]
+    availableStatus = [const.Status.active]
+    scheduledStatus = [const.Status.busy, const.Status.tentative]
+    busyStatus = [const.Status.call, const.Status.donotdisturb, const.Status.meeting, const.Status.presenting, const.Status.pending]
+
+    availableColor = const.Color.Green.value
+    scheduledColor = const.Color.Orange.value
+    busyColor = const.Color.Red.value
+
 
     def getTuya(self):
-        self.tuyaDevice = os.environ.get(self.TUYA_DEVICE, None)
-        return (None not in [self.tuyaDevice])
+        self.tuyaDevice = os.environ.get('TUYA_DEVICE', None)
+        brightness_try_parse = util.ignore_exception(ValueError, self.tuyaBrightness)(int)
+        self.tuyaBrightness = brightness_try_parse(os.environ.get('TUYA_BRIGHTNESS', self.tuyaBrightness))
+        return (None not in [self.tuyaDevice]) and self.tuyaBrightness >= 32 and self.tuyaBrightness <= 255
 
     def getWebex(self):
-        self.webexPersonID = os.environ.get(self.WEBEX_PERSONID, None)
-        self.webexBotID = os.environ.get(self.WEBEX_BOTID, None)
+        self.webexPersonID = os.environ.get('WEBEX_PERSONID', None)
+        self.webexBotID = os.environ.get('WEBEX_BOTID', None)
         return (None not in [self.webexPersonID, self.webexBotID])
 
     def getOffice(self):
-        self.officeAppID = os.environ.get(self.O365_APPID, None)
-        self.officeAppSecret = os.environ.get(self.O365_APPSECRET, None)
-        self.officeTokenStore = os.environ.get(self.O365_TOKENSTORE, '~')
+        self.officeAppID = os.environ.get('O365_APPID', None)
+        self.officeAppSecret = os.environ.get('O365_APPSECRET', None)
+        self.officeTokenStore = os.environ.get('O365_TOKENSTORE', self.officeTokenStore)
         return (None not in [self.officeAppID, self.officeAppSecret, self.officeTokenStore])
+
+    def getColors(self):
+        self.availableColor = self._parseColor(os.environ.get('AVAILABLE_COLOR', None), const.Color.Green.value)
+        self.scheduledColor = self._parseColor(os.environ.get('SCHEDULED_COLOR', None), const.Color.Orange.value)
+        self.busyColor = self._parseColor(os.environ.get('BUSY_COLOR', None), const.Color.Red.value)
+        return (None not in [self.availableColor, self.scheduledColor, self.busyColor])
+
+    def getStatus(self):
+        self.offStatus = self._parseStatus(os.environ.get('OFF_STATUS', None), self.offStatus)
+        self.availableStatus = self._parseStatus(os.environ.get('AVAILABLE_STATUS', None), self.availableStatus)
+        self.busyStatus = self._parseStatus(os.environ.get('BUSY_STATUS', None), self.busyStatus)
+        self.scheduledStatus = self._parseStatus(os.environ.get('SCHEDULED_STATUS', None), self.scheduledStatus)
+        return (None not in [self.offStatus, self.availableStatus, self.busyStatus, self.scheduledStatus])
+
+    def _parseColor(self, colorString, default):
+        tempColor = default
+        if colorString in [None, '']: 
+            return tempColor
+
+        try:
+            # We accept both a set of constants [RED, GREEN, BLUE, YELLOW, ORANGE] or a standard hex RGB (rrggbb) input
+            if not re.match('^[0-9A-Fa-f]{6}$', colorString) == None:
+                tempColor = colorString
+            else:
+                tempColor = const.Color[colorString.title()].value
+                if tempColor == const.Color.unknown.value:
+                    tempColor = default
+        except BaseException as e:
+            logger.warning('Exception encountered during _parseColor: %s, using default: %s', e, default)
+            tempColor = default
+        return tempColor
+
+    def _parseStatus(self, statusString, default):
+        tempStatus = default
+        if statusString in [None, '']: 
+            return tempStatus
+
+        try:
+            tempStatus = list(const.Status[status.strip()] for status in statusString.split(','))
+        except BaseException as e:
+            logger.warning('Exception encountered during _parseStatus: %s, using default: %s', e, list(status.name for status in default))
+            tempStatus = default
+        return tempStatus

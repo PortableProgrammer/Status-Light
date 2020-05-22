@@ -9,16 +9,12 @@ import logging
 
 # Project imports
 import const
+import env
 
 logger = logging.getLogger(__name__)
 
 class TuyaLight:
     device = ''
-    RED = 'ff00000000ffff'
-    YELLOW = 'ffff000000ffff'
-    ORANGE = 'ff90000000ffff'
-    GREEN = '00ff000000ffff'
-    BLUE = '0000ff0000ffff'
 
     def on(self):
         return self.setSingleState(1, True)
@@ -41,12 +37,16 @@ class TuyaLight:
                 time.sleep(1)
         return status
 
-    def setState(self, mode = 'white', color = 'ffffff0000ffff', brightness: int = 128):
+    def setState(self, mode = 'white', color = 'ffffff', brightness: int = 128):
         # DPS:
         # 1: Power, bool
         # 2: Mode, 'white' or 'colour'
-        # 3: Brightness, int 0-255
+        # 3: Brightness, int 0-255, but the lowest usable threshold is between 32 and 64
         # 5: Color, 'rrggbb0000ffff'
+
+        # Ensure the color has all the bits we care about
+        if not color.endswith('0000ffff'):
+            color = color + '0000ffff'
 
         # Light must be on (so we'll do that first)
         # Brightness should be next
@@ -61,20 +61,20 @@ class TuyaLight:
     def getStatus(self):
         return tuyaface.status(self.device)
 
-    def transitionStatus(self, status: const.Status):
+    def transitionStatus(self, status: const.Status, environment: env.Environment):
         # Take the statii and determine what we care about most
         # White/Green/Off when available
         # Yellow/Orange when in a meeting (Calendar)
         # Red when on a Webex call/meeting or DnD (due to the way that Webex Teams handles status priorities) - This takes priority over calendar
 
-        if status in const.OFF: 
+        if status in environment.offStatus: 
             self.off()
 
-        if status in const.GREEN:
-            self.setState('colour', self.GREEN)
+        if status in environment.availableStatus:
+            self.setState('colour', environment.availableColor, environment.tuyaBrightness)
 
-        if status in const.ORANGE:
-            self.setState('colour', self.ORANGE)
+        if status in environment.scheduledStatus:
+            self.setState('colour', environment.scheduledColor, environment.tuyaBrightness)
 
-        if status in const.RED: 
-            self.setState('colour', self.RED)
+        if status in environment.busyStatus: 
+            self.setState('colour', environment.busyColor, environment.tuyaBrightness)

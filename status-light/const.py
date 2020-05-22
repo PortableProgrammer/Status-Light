@@ -6,7 +6,7 @@ class Status(enum.Enum):
     # Webex
     active = 1
     call = 2
-    DoNotDisturb = 3
+    donotdisturb = 3
     inactive = 4
     meeting = 5
     pending = 6
@@ -16,10 +16,21 @@ class Status(enum.Enum):
     free = 8
     tentative = 9
     busy = 10
-    OutOfOffice = 11
-    WorkingElsewhere = 12
+    outofoffice = 11
+    workingelsewhere = 12
 
-OFF = [Status.inactive, Status.OutOfOffice, Status.unknown, Status.free]
-GREEN = [Status.active]
-ORANGE = [Status.busy, Status.tentative]
-RED = [Status.call, Status.DoNotDisturb, Status.meeting, Status.presenting]
+    def _missing_(self, value):
+        return self.unknown
+
+class Color(enum.Enum):
+    unknown = 'xxxxxx'
+
+    Red = 'ff0000'
+    Yellow = 'ffff00'
+    Orange = 'ff9000'
+    Green = '00ff00'
+    Blue = '0000f'
+
+    def _missing_(self, value):
+        return self.unknown
+
