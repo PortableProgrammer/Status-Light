@@ -1,4 +1,3 @@
-gcc
 pycryptodomex
 webexteamssdk
 tuyaface
