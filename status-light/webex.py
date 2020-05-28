@@ -15,7 +15,7 @@ class WebexAPI:
     def getPersonStatus(self, personID):
         api = WebexTeamsAPI(access_token = self.botID)
         try:
-            return const.Status[api.people.get(personID).status]
+            return const.Status[api.people.get(personID).status.lower()]
         except (SystemExit, KeyboardInterrupt):
             pass
         except BaseException as e:
