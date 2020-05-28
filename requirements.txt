@@ -1,4 +1,4 @@
 pycryptodomex
 webexteamssdk
-tuyaface
+tuyaface==v1.1.7
 O365
