@@ -11,6 +11,8 @@ class Environment:
     tuyaDevice = None
     tuyaBrightness = 128
 
+    selectedSources = None
+
     webexPersonID = None
     webexBotID = None
 
@@ -23,10 +25,13 @@ class Environment:
     scheduledStatus = [const.Status.busy, const.Status.tentative]
     busyStatus = [const.Status.call, const.Status.donotdisturb, const.Status.meeting, const.Status.presenting, const.Status.pending]
 
-    availableColor = const.Color.Green.value
-    scheduledColor = const.Color.Orange.value
-    busyColor = const.Color.Red.value
+    availableColor = const.Color.green.value
+    scheduledColor = const.Color.orange.value
+    busyColor = const.Color.red.value
 
+    def getSources(self):
+        self.selectedSources = self._parseSource(os.environ.get('SOURCES', None))
+        return (None != self.selectedSources)
 
     def getTuya(self):
         self.tuyaDevice = os.environ.get('TUYA_DEVICE', None)
@@ -46,9 +51,9 @@ class Environment:
         return (None not in [self.officeAppID, self.officeAppSecret, self.officeTokenStore])
 
     def getColors(self):
-        self.availableColor = self._parseColor(os.environ.get('AVAILABLE_COLOR', None), const.Color.Green.value)
-        self.scheduledColor = self._parseColor(os.environ.get('SCHEDULED_COLOR', None), const.Color.Orange.value)
-        self.busyColor = self._parseColor(os.environ.get('BUSY_COLOR', None), const.Color.Red.value)
+        self.availableColor = self._parseColor(os.environ.get('AVAILABLE_COLOR', None), self.availableColor)
+        self.scheduledColor = self._parseColor(os.environ.get('SCHEDULED_COLOR', None), self.scheduledColor)
+        self.busyColor = self._parseColor(os.environ.get('BUSY_COLOR', None), self.busyColor)
         return (None not in [self.availableColor, self.scheduledColor, self.busyColor])
 
     def getStatus(self):
@@ -58,17 +63,29 @@ class Environment:
         self.scheduledStatus = self._parseStatus(os.environ.get('SCHEDULED_STATUS', None), self.scheduledStatus)
         return (None not in [self.offStatus, self.availableStatus, self.busyStatus, self.scheduledStatus])
 
+    def _parseSource(self, sourceString):
+        tempStatus = None
+        if sourceString in [None, '']: 
+            return tempStatus
+
+        try:
+            tempStatus = list(const.StatusSource[source.lower().strip()] for source in sourceString.split(','))
+        except BaseException as e:
+            logger.warning('Exception encountered during _parseSourcr: %s', e)
+            tempStatus = None
+        return tempStatus
+
     def _parseColor(self, colorString, default):
         tempColor = default
         if colorString in [None, '']: 
             return tempColor
 
         try:
-            # We accept both a set of constants [RED, GREEN, BLUE, YELLOW, ORANGE] or a standard hex RGB (rrggbb) input
+            # We accept both a set of constants [red, green, blue, yellow, orange] or a standard hex RGB (rrggbb) input
             if not re.match('^[0-9A-Fa-f]{6}$', colorString) == None:
                 tempColor = colorString
             else:
-                tempColor = const.Color[colorString.title()].value
+                tempColor = const.Color[colorString.lower().strip()].value
                 if tempColor == const.Color.unknown.value:
                     tempColor = default
         except BaseException as e:
@@ -82,7 +99,7 @@ class Environment:
             return tempStatus
 
         try:
-            tempStatus = list(const.Status[status.strip()] for status in statusString.split(','))
+            tempStatus = list(const.Status[status.lower().strip()] for status in statusString.split(','))
         except BaseException as e:
             logger.warning('Exception encountered during _parseStatus: %s, using default: %s', e, list(status.name for status in default))
             tempStatus = default

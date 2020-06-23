@@ -45,12 +45,36 @@ for sig in signals:
     signal.signal(sig, receiveSignal)
 signal.signal(signal.SIGTERM, receiveTerminate)
 
-# TODO: Validate environment variables in a structured way
+# Validate environment variables in a structured way
 localEnv = env.Environment()
-if False in [localEnv.getTuya(), localEnv.getWebex(), localEnv.getOffice(), localEnv.getColors(), localEnv.getStatus()]:
+if False in [localEnv.getSources(), localEnv.getTuya(), localEnv.getColors(), localEnv.getStatus()]:
     # We failed to gather some environment variables
     logger.warning('Failed to find all environment variables!')
     sys.exit(1)
+
+# Depending on the selected sources, get the environment
+webexAPI = None
+if const.StatusSource.webex in localEnv.selectedSources:
+    if localEnv.getWebex():
+        logger.info('Requested Webex')
+        webexAPI = webex.WebexAPI()
+        webexAPI.botID = localEnv.webexBotID
+    else:
+        logger.warning('Requested Webex, but could not find all environment variables!')
+        sys.exit(1)
+
+officeAPI = None
+if const.StatusSource.office365 in localEnv.selectedSources:
+    if localEnv.getOffice():
+        logger.info('Requested Office 365')
+        officeAPI = office365.OfficeAPI()
+        officeAPI.appID = localEnv.officeAppID
+        officeAPI.appSecret = localEnv.officeAppSecret
+        officeAPI.tokenStore = localEnv.officeTokenStore
+        officeAPI.authenticate()
+    else:
+        logger.warning('Requested Office 365, but could not find all environment variables!')
+        sys.exit(1)
 
 # Tuya
 light = tuya.TuyaLight()
@@ -59,24 +83,18 @@ logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 # TODO: Connect to the device and ensure it's available
 #light.getCurrentStatus()
 
-# Webex
-webexAPI = webex.WebexAPI()
-webexAPI.botID = localEnv.webexBotID
-
-# Office365 
-officeAPI = office365.OfficeAPI()
-officeAPI.appID = localEnv.officeAppID
-officeAPI.appSecret = localEnv.officeAppSecret
-officeAPI.tokenStore = localEnv.officeTokenStore
-officeAPI.authenticate()
-
 while shouldContinue:
     try:
+        webexStatus = const.Status.unknown
+        officeStatus = const.Status.unknown
+
         # Webex Status
-        webexStatus = webexAPI.getPersonStatus(localEnv.webexPersonID)
+        if const.StatusSource.webex in localEnv.selectedSources:
+            webexStatus = webexAPI.getPersonStatus(localEnv.webexPersonID)
 
         # O365 Status (based on calendar)
-        officeStatus = officeAPI.getCurrentStatus()
+        if const.StatusSource.office365 in localEnv.selectedSources:
+            officeStatus = officeAPI.getCurrentStatus()
         
         # Compare statii and pick a winner
         logger.debug('Webex: %s | Office: %s', webexStatus, officeStatus)
@@ -103,6 +121,7 @@ while shouldContinue:
         shouldContinue = False
     except BaseException as e:
         logger.warning('Exception during main loop: %s', e)
+        logger.debug(e)
 
 print()
 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Shutdown')

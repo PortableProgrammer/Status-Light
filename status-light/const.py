@@ -25,12 +25,20 @@ class Status(enum.Enum):
 class Color(enum.Enum):
     unknown = 'xxxxxx'
 
-    Red = 'ff0000'
-    Yellow = 'ffff00'
-    Orange = 'ff9000'
-    Green = '00ff00'
-    Blue = '0000f'
+    red = 'ff0000'
+    yellow = 'ffff00'
+    orange = 'ff9000'
+    green = '00ff00'
+    blue = '0000f'
 
     def _missing_(self, value):
         return self.unknown
 
+class StatusSource(enum.Enum):
+    unknown = 0
+
+    webex = 1
+    office365 = 2
+
+    def _missing(self, value):
+        return self.unknown
