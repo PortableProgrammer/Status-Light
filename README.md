@@ -50,7 +50,7 @@ services:
 
 Available values: `Webex`, `Office365`
 
-Default value: `SOURCES=Webex,Office365`
+Default value: `Webex,Office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
@@ -164,6 +164,6 @@ To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's]
 #### `O365_TOKENSTORE`
 *Optional*
 
-Default value: `O365_TOKENSTORE=~`
+Default value: `~`
 
-Defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users. The default is `~`.
+Defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users.
