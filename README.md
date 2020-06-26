@@ -154,10 +154,16 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
   * Sign into your Webex account, then under the "Try It" section, click "Run"
   * Copy the value id from the response shown
 
-### Office 365: `O365_APPID`, `O365_APPSECRET`, and `O365_TOKENSTORE`
+### Office 365: `O365_APPID`, `O365_APPSECRET`
 *Required if `Office365` is present in `SOURCES`*
 
 Status-Light uses the [python-o365](https://github.com/O365/python-o365/) module for Office 365 status lookup.
 
 To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's](https://github.com/O365) [usage and authentication guide](https://github.com/O365/python-o365#usage).
-An optional variable, `O365_TOKENSTORE`, defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users. The default is `~`.
+
+#### `O365_TOKENSTORE`
+*Optional*
+
+Default value: `O365_TOKENSTORE=~`
+
+Defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users. The default is `~`.
