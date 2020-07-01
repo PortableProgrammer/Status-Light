@@ -1,5 +1,5 @@
 # Status-Light
-A basic status light that will show when I'm available or not. This was inspired by [matthewf01's](https://github.com/matthewf01) [WebexTeams-Status-Box](https://github.com/matthewf01/Webex-Teams-Status-Box)
+A basic status light that will show when I'm available or not. This was inspired by [matthewf01's](https://github.com/matthewf01) [WebexTeams-Status-Box](https://github.com/matthewf01/Webex-Teams-Status-Box), for basically the same reason: My 5-year-old needs some way to tell if he can run in screaming at me while I'm working from home.
 
 Status-Light will connect to multiple status sources (currently Cisco Webex and Microsoft Office 365), retrieve the current status of each, and then determine the most-busy status. It will then display this status on a remote RGB LED bulb (currently Tuya).
 
@@ -50,7 +50,7 @@ services:
 
 Available values: `Webex`, `Office365`
 
-Default value: `SOURCES=Webex,Office365`
+Default value: `Webex,Office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
@@ -154,10 +154,16 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
   * Sign into your Webex account, then under the "Try It" section, click "Run"
   * Copy the value id from the response shown
 
-### Office 365: `O365_APPID`, `O365_APPSECRET`, and `O365_TOKENSTORE`
+### Office 365: `O365_APPID`, `O365_APPSECRET`
 *Required if `Office365` is present in `SOURCES`*
 
 Status-Light uses the [python-o365](https://github.com/O365/python-o365/) module for Office 365 status lookup.
 
 To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's](https://github.com/O365) [usage and authentication guide](https://github.com/O365/python-o365#usage).
-An optional variable, `O365_TOKENSTORE`, defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users. The default is `~`.
+
+#### `O365_TOKENSTORE`
+*Optional*
+
+Default value: `~`
+
+Defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users.
