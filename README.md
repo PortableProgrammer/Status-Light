@@ -33,6 +33,7 @@ services:
       - "BUSY_STATUS=call,donotdisturb,meeting,presenting,pending"
       - "OFF_STATUS=inactive,outofoffice,free,unknown"
       - "TUYA_DEVICE={ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }"
+      - "TUYA_BRIGHTNESS=128"
       - "WEBEX_PERSONID=xxx"
       - "WEBEX_BOTID=xxx"
       - "O365_APPID=xxx"
@@ -54,7 +55,7 @@ Default value: `Webex,Office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
-### Colors: `AVAILABLE_COLOR`, `SCHEDULED_COLOR`, and `BUSY_COLOR`
+### **Colors:** `AVAILABLE_COLOR`, `SCHEDULED_COLOR`, and `BUSY_COLOR`
 *Optional*
 
 Available values: 
@@ -72,7 +73,7 @@ Default values:
 
 **Note:** Status-Light makes no attempt to handle invalid values in these variables. Any error parsing the color will cause Status-Light to revert to the default color for that variable.
 
-### Statuses: `AVAILABLE_STATUS`, `SCHEDULED_STATUS`, `BUSY_STATUS`, and `OFF_STATUS`
+### **Statuses:** `AVAILABLE_STATUS`, `SCHEDULED_STATUS`, `BUSY_STATUS`, and `OFF_STATUS`
 *Optional*
 
 Available values: 
@@ -139,7 +140,17 @@ To retreive your TUYA_DEVICE credentials, follow [codetheweb's](https://github.c
 
 **Note 2:** For Status-Light's purposes, protocol can be 3.0+, but some older devices may not function correctly with the newer protocols, so this may have to be adjusted.
 
-### Webex: `WEBEX_PERSONID` and `WEBEX_BOTID`
+### `TUYA_BRIGHTNESS`
+*Optional*
+
+Default Value: `128`
+Acceptable Range: `32`-`255`
+
+Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100%. Status-Light defaults to 50% brightness, `128`.
+
+**Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the brightness will cause Status-Light to revert to the default brightness.
+
+### **Webex:** `WEBEX_PERSONID` and `WEBEX_BOTID`
 *Required if `Webex` is present in `SOURCES`*
 
 Status-Light uses the [webexteamssdk](https://github.com/CiscoDevNet/webexteamssdk/) module for Webex status lookup.
@@ -154,7 +165,7 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
   * Sign into your Webex account, then under the "Try It" section, click "Run"
   * Copy the value id from the response shown
 
-### Office 365: `O365_APPID`, `O365_APPSECRET`
+### **Office 365:** `O365_APPID`, `O365_APPSECRET`
 *Required if `Office365` is present in `SOURCES`*
 
 Status-Light uses the [python-o365](https://github.com/O365/python-o365/) module for Office 365 status lookup.
