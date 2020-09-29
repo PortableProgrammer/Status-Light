@@ -29,6 +29,9 @@ class Environment:
     scheduledColor = const.Color.orange.value
     busyColor = const.Color.red.value
 
+    #22 - Make sleep timeout configurable
+    sleepSeconds = 5
+
     def getSources(self):
         self.selectedSources = self._parseSource(os.environ.get('SOURCES', None))
         return (None != self.selectedSources)
@@ -62,6 +65,11 @@ class Environment:
         self.busyStatus = self._parseStatus(os.environ.get('BUSY_STATUS', None), self.busyStatus)
         self.scheduledStatus = self._parseStatus(os.environ.get('SCHEDULED_STATUS', None), self.scheduledStatus)
         return (None not in [self.offStatus, self.availableStatus, self.busyStatus, self.scheduledStatus])
+
+    def getSleep(self):
+        sleep_try_parse = util.ignore_exception(ValueError, self.sleepSeconds)(int)
+        self.sleepSeconds = sleep_try_parse(os.environ.get('SLEEP_SECONDS', self.sleepSeconds))
+        return self.sleepSeconds >= 5 and self.sleepSeconds <= 60
 
     def _parseSource(self, sourceString):
         tempStatus = None

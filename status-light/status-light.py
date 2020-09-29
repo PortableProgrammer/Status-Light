@@ -47,7 +47,7 @@ signal.signal(signal.SIGTERM, receiveTerminate)
 
 # Validate environment variables in a structured way
 localEnv = env.Environment()
-if False in [localEnv.getSources(), localEnv.getTuya(), localEnv.getColors(), localEnv.getStatus()]:
+if False in [localEnv.getSources(), localEnv.getTuya(), localEnv.getColors(), localEnv.getStatus(), localEnv.getSleep()]:
     # We failed to gather some environment variables
     logger.warning('Failed to find all environment variables!')
     sys.exit(1)
@@ -115,7 +115,7 @@ while shouldContinue:
             print('.', end='', flush=True)
 
         # Sleep for a few seconds    
-        time.sleep(5)
+        time.sleep(localEnv.sleepSeconds)
     except (SystemExit, KeyboardInterrupt) as e:
         logger.info('%s received; shutting down...', e.__class__.__name__)
         shouldContinue = False

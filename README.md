@@ -178,3 +178,13 @@ To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's]
 Default value: `~`
 
 Defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users.
+
+### `SLEEP_SECONDS`
+*Optional*
+
+Default value: `5`
+Acceptable range: `5`-`60`
+
+Set the number of seconds between status checks.
+
+**Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the sleep seconds will cause Status-Light to revert to the default.
