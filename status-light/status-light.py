@@ -18,7 +18,6 @@ import const
 currentStatus = const.Status.unknown
 lastStatus = currentStatus
 
-# TODO: Dynamic logging level
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='[%Y-%m-%d %H:%M:%S]', level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -47,10 +46,15 @@ signal.signal(signal.SIGTERM, receiveTerminate)
 
 # Validate environment variables in a structured way
 localEnv = env.Environment()
-if False in [localEnv.getSources(), localEnv.getTuya(), localEnv.getColors(), localEnv.getStatus(), localEnv.getSleep()]:
+if False in [localEnv.getSources(), localEnv.getTuya(), localEnv.getColors(), localEnv.getStatus(), localEnv.getSleep(), localEnv.getLogLevel()]:
     # We failed to gather some environment variables
     logger.warning('Failed to find all environment variables!')
     sys.exit(1)
+
+# 23 - Make logging level configurable
+logger.info('Setting log level to %s', localEnv.logLevel)
+print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Setting log level to', localEnv.logLevel)
+logger.setLevel(localEnv.logLevel)
 
 # Depending on the selected sources, get the environment
 webexAPI = None

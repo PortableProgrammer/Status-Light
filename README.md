@@ -144,7 +144,7 @@ Default values:
 
 **Note 2:** Status-Light makes no attempt to ensure that any given status is present in only a single list. In the case of a status in multiple lists, the order of precedence below applies as well. This can have the unintended side effect of the light cycling through different colors (or even states, if it's turned off first) before landing on the chosen color/state.
 
-#### Status Precedence
+#### **Status Precedence**
 Since the "most-busy" status should win when selecting a color, typically the Webex status will take precedence over Office 365. For example, if your Office 365 status is `busy` (you're scheduled to be in a meeting), and your Webex status is `meeting` (you're actively in the meeting), the Webex `meeting` status would take precedence, given the default values listed above. Generally, precedence is `BUSY_STATUS`, then `SCHEDULED_STATUS`, followed by `AVAILABLE_STATUS`, and finally `OFF_STATUS`. In more specific terms, the way Status-Light handles precedence is:
 ``` python
 # Webex status always wins except in specific scenarios
@@ -166,7 +166,8 @@ if currentStatus in busyStatus:
   # Set busyColor
 ```
 
-### `TUYA_DEVICE`
+### **Tuya**
+#### `TUYA_DEVICE`
 *Required*
 
 Status-Light requires a [Tuya](https://www.tuya.com/) device, which are white-boxed and sold under many brand names. For example, the Tuya light working in the current environment is an [Above Lights](http://alabovelights.com/) [Smart Bulb 9W, model AL1](http://alabovelights.com/pd.jsp?id=17).
@@ -183,7 +184,7 @@ To retreive your TUYA_DEVICE credentials, follow [codetheweb's](https://github.c
 
 **Note 2:** For Status-Light's purposes, protocol can be 3.0+, but some older devices may not function correctly with the newer protocols, so this may have to be adjusted.
 
-### `TUYA_BRIGHTNESS`
+#### `TUYA_BRIGHTNESS`
 *Optional*
 
 Default Value: `128`
@@ -194,7 +195,8 @@ Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding 
 
 **Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the brightness will cause Status-Light to revert to the default brightness.
 
-### **Webex:** `WEBEX_PERSONID`, `WEBEX_BOTID`
+### **Webex** 
+#### `WEBEX_PERSONID`, `WEBEX_BOTID`
 *Required if `Webex` is present in `SOURCES`*
 
 Status-Light uses the [webexteamssdk](https://github.com/CiscoDevNet/webexteamssdk/) module for Webex status lookup.
@@ -211,7 +213,8 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
 
 **Docker Secrets:** These variables can instead be specified in secrets files, using the `WEBEX_PERSONID_FILE` and `WEBEX_BOTID_FILE` variables.
 
-### **Office 365:** `O365_APPID`, `O365_APPSECRET`
+### **Office 365** 
+#### `O365_APPID`, `O365_APPSECRET`
 *Required if `Office365` is present in `SOURCES`*
 
 Status-Light uses the [python-o365](https://github.com/O365/python-o365/) module for Office 365 status lookup.
@@ -237,3 +240,19 @@ Acceptable range: `5`-`60`
 Set the number of seconds between status checks.
 
 **Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the sleep seconds will cause Status-Light to revert to the default.
+
+### `LOGLEVEL`
+*Optional*
+
+Default value: `WARNING`
+
+Acceptable values, documented [here](https://docs.python.org/3/library/logging.html#levels):
+* `CRITICAL`
+* `ERROR`
+* `WARNING`
+* `INFO`
+* `DEBUG`
+
+Sets the log level for Status-Light. 
+
+**Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the log level will cause Status-Light to revert to the default.

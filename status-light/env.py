@@ -32,6 +32,9 @@ class Environment:
     #22 - Make sleep timeout configurable
     sleepSeconds = 5
 
+    #23 - Make logging level configurable
+    logLevel = 'WARNING'
+
     def getSources(self):
         self.selectedSources = self._parseSource(os.environ.get('SOURCES', None))
         return (None != self.selectedSources)
@@ -76,6 +79,10 @@ class Environment:
         self.sleepSeconds = sleep_try_parse(os.environ.get('SLEEP_SECONDS', self.sleepSeconds))
         return self.sleepSeconds >= 5 and self.sleepSeconds <= 60
 
+    def getLogLevel(self):
+        self.logLevel = self._parseLogLevel(os.environ.get('LOGLEVEL'), self.logLevel)
+        return self.logLevel != None
+
     def _parseSource(self, sourceString):
         tempStatus = None
         if sourceString in [None, '']: 
@@ -117,6 +124,24 @@ class Environment:
             logger.warning('Exception encountered during _parseStatus: %s, using default: %s', e, list(status.name for status in default))
             tempStatus = default
         return tempStatus
+
+    #23 - Log Level
+    def _parseLogLevel(self, logString, default):
+        tempLog = default
+        if logString in [None, '']: 
+            return tempLog
+
+        try:
+            # We accept a set of logging constants [CRITICAL, ERROR, WARNING, INFO, DEBUG]
+            if not re.match('^(CRITICAL|ERROR|WARNING|INFO|DEBUG)$', logString.upper().strip()) == None:
+                tempLog = logString.upper().strip()
+            else:
+                tempLog = default
+        except BaseException as e:
+            logger.warning('Exception encountered during _parseLogLevel: %s, using default: %s', e, default)
+            tempLog = default
+            
+        return tempLog
 
     # 30 - Docker Secrets
     def _getEnvOrSecret(self, variable, default, treatEmptyAsNone: bool = True):
