@@ -37,19 +37,24 @@ class Environment:
         return (None != self.selectedSources)
 
     def getTuya(self):
-        self.tuyaDevice = os.environ.get('TUYA_DEVICE', None)
+        # 30: This variable could contain secrets
+        self.tuyaDevice = self._getEnvOrSecret('TUYA_DEVICE', None)
         brightness_try_parse = util.ignore_exception(ValueError, self.tuyaBrightness)(int)
         self.tuyaBrightness = brightness_try_parse(os.environ.get('TUYA_BRIGHTNESS', self.tuyaBrightness))
         return (None not in [self.tuyaDevice]) and self.tuyaBrightness >= 32 and self.tuyaBrightness <= 255
 
     def getWebex(self):
-        self.webexPersonID = os.environ.get('WEBEX_PERSONID', None)
-        self.webexBotID = os.environ.get('WEBEX_BOTID', None)
+        # 30: This variable could contain secrets
+        self.webexPersonID = self._getEnvOrSecret('WEBEX_PERSONID', None)
+        # 30: This variable could contain secrets
+        self.webexBotID = self._getEnvOrSecret('WEBEX_BOTID', None)
         return (None not in [self.webexPersonID, self.webexBotID])
 
     def getOffice(self):
-        self.officeAppID = os.environ.get('O365_APPID', None)
-        self.officeAppSecret = os.environ.get('O365_APPSECRET', None)
+        # 30: This variable could contain secrets
+        self.officeAppID = self._getEnvOrSecret('O365_APPID', None)
+        # 30: This variable could contain secrets
+        self.officeAppSecret = self._getEnvOrSecret('O365_APPSECRET', None)
         self.officeTokenStore = os.environ.get('O365_TOKENSTORE', self.officeTokenStore)
         return (None not in [self.officeAppID, self.officeAppSecret, self.officeTokenStore])
 
@@ -112,3 +117,53 @@ class Environment:
             logger.warning('Exception encountered during _parseStatus: %s, using default: %s', e, list(status.name for status in default))
             tempStatus = default
         return tempStatus
+
+    # 30 - Docker Secrets
+    def _getEnvOrSecret(self, variable, default, treatEmptyAsNone: bool = True):
+        """Given a variable name, returns the Environment or File variant of the variable. If both are None, returns default.
+        
+        For a given variable name, e.g. O365_APPSECRET, this method will check for both the standard environment variable (O365_APPSECRET) as well as the _FILE variant (O365_APPSECRET_FILE).
+        Precedence is given to the standard environment variable, and the _FILE variant is only checked if the standard variant is nonexistent or None.
+        If treatEmptyAsNone is true (which is the default), this method will also treat empty strings returned from either variant as None, and trigger the next check or return the default.
+        Note that this method does not attempt to parse or validate the value in variable; it simply returns the raw string found, if any.
+        """
+        value = default
+        try: 
+            # First, check the standard variant
+            value = os.environ.get(variable, None)
+
+            # If this value is None or an empty string,
+            if value is None or (treatEmptyAsNone and value == ''):
+                # Check the _FILE variant
+                secretFilename = os.environ.get(variable + '_FILE', None)
+                if secretFilename is not None and (treatEmptyAsNone and value != ''):
+                    value = self._readFile(secretFilename)
+            else:
+                # Strip the whitespace
+                value = value.strip()
+        except BaseException as e:
+            logger.warning('Exception encountered during _getEnvOrSecret for %s: %s', variable, e)
+            value = default
+
+        # Finally, if the value is nonexistent or empty, just return the default
+        if value is None or (treatEmptyAsNone and value == ''):
+            value = default
+
+        return value
+
+    def _readFile(self, file, strip: bool = True):
+        """Read, and optionally strip spaces from, a file."""
+        secret = None
+
+        if not os.access(file, os.F_OK):
+            return secret
+        else:
+            try:
+                with open(file) as file:
+                    secret = file.read()
+                    if (strip):
+                        secret = secret.strip()
+            except BaseException as e:
+                logger.warning('Exception encountered during _readFile: %s', e)
+
+        return secret
