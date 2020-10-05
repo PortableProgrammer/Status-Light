@@ -37,7 +37,8 @@ class Environment:
     logLevel = 'WARNING'
 
     def getSources(self):
-        self.selectedSources = self._parseSource(os.environ.get('SOURCES', None))
+        #32 - SOURCES variable default is wrong
+        self.selectedSources = self._parseSource(os.environ.get('SOURCES', self.selectedSources))
         return (None != self.selectedSources)
 
     def getTuya(self):
