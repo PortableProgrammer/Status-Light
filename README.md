@@ -16,6 +16,7 @@ docker run -d \
   -e "WEBEX_BOTID=xxx" \ 
   portableprogrammer/status-light:latest
 ```
+
 ### Compose with all options
 ``` dockerfile
 version: '3.7'
@@ -33,6 +34,7 @@ services:
       - "BUSY_STATUS=call,donotdisturb,meeting,presenting,pending"
       - "OFF_STATUS=inactive,outofoffice,free,unknown"
       - "TUYA_DEVICE={ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }"
+      - "TUYA_BRIGHTNESS=128"
       - "WEBEX_PERSONID=xxx"
       - "WEBEX_BOTID=xxx"
       - "O365_APPID=xxx"
@@ -42,6 +44,46 @@ services:
       - type: bind
         source: /path/to/tokenstore
         target: /data
+```
+
+### Compose with secrets
+**Note:** This method requires that you have previously defined the secrets using the [`docker secret create` command](https://docs.docker.com/engine/reference/commandline/secret_create/).
+
+``` dockerfile
+version: '3.7'
+services:
+
+  status-light:
+    image: portableprogrammer/status-light:latest
+    environment:
+      - "TUYA_DEVICE_FILE=/run/secrets/tuya-device-secret-v1"
+      - "WEBEX_PERSONID_FILE=/run/secrets/webex-personid-secret-v1"
+      - "WEBEX_BOTID_FILE=/run/secrets/webex-botid-secret-v1"
+      - "O365_APPID_FILE=/run/secrets/o365-appid-secret-v1"
+      - "O365_APPSECRET_FILE=/run/secrets/o365-appsecret-secret-v3"
+      - "O365_TOKENSTORE=/data"
+    volumes:
+      - type: bind
+        source: /path/to/tokenstore
+        target: /data
+    secrets:
+      - tuya-device-secret-v1
+      - webex-personid-secret-v1
+      - webex-botid-secret-v1
+      - o365-appid-secret-v1
+      - o365-appsecret-secret-v3
+
+secrets:
+  tuya-device-secret-v1:
+    external: true
+  webex-personid-secret-v1:
+    external: true
+  webex-botid-secret-v1:
+    external: true
+  o365-appid-secret-v1:
+    external: true
+  o365-appsecret-secret-v3:
+    external: true
 ```
 
 ## Environment Variables
@@ -54,7 +96,7 @@ Default value: `Webex,Office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
-### Colors: `AVAILABLE_COLOR`, `SCHEDULED_COLOR`, and `BUSY_COLOR`
+### **Colors:** `AVAILABLE_COLOR`, `SCHEDULED_COLOR`, and `BUSY_COLOR`
 *Optional*
 
 Available values: 
@@ -72,7 +114,7 @@ Default values:
 
 **Note:** Status-Light makes no attempt to handle invalid values in these variables. Any error parsing the color will cause Status-Light to revert to the default color for that variable.
 
-### Statuses: `AVAILABLE_STATUS`, `SCHEDULED_STATUS`, `BUSY_STATUS`, and `OFF_STATUS`
+### **Statuses:** `AVAILABLE_STATUS`, `SCHEDULED_STATUS`, `BUSY_STATUS`, and `OFF_STATUS`
 *Optional*
 
 Available values: 
@@ -100,9 +142,9 @@ Default values:
 
 **Note 1:** Status-Light makes no attempt to handle invalid values in a list. In the case of an error, Status-Light will simply revert to the default value for that list.
 
-**Note 2:** Status-Light makes no attempt to ensure that any given status is present in only a single list. In the case of a status in multple lists, the order of precedence below applies as well. This can have the unintended side effect of the light cycling through different colors (or even states, if it's turned off first) before landing on the chosen color/state.
+**Note 2:** Status-Light makes no attempt to ensure that any given status is present in only a single list. In the case of a status in multiple lists, the order of precedence below applies as well. This can have the unintended side effect of the light cycling through different colors (or even states, if it's turned off first) before landing on the chosen color/state.
 
-#### Status Precedence
+#### **Status Precedence**
 Since the "most-busy" status should win when selecting a color, typically the Webex status will take precedence over Office 365. For example, if your Office 365 status is `busy` (you're scheduled to be in a meeting), and your Webex status is `meeting` (you're actively in the meeting), the Webex `meeting` status would take precedence, given the default values listed above. Generally, precedence is `BUSY_STATUS`, then `SCHEDULED_STATUS`, followed by `AVAILABLE_STATUS`, and finally `OFF_STATUS`. In more specific terms, the way Status-Light handles precedence is:
 ``` python
 # Webex status always wins except in specific scenarios
@@ -124,7 +166,8 @@ if currentStatus in busyStatus:
   # Set busyColor
 ```
 
-### `TUYA_DEVICE`
+### **Tuya**
+#### `TUYA_DEVICE`
 *Required*
 
 Status-Light requires a [Tuya](https://www.tuya.com/) device, which are white-boxed and sold under many brand names. For example, the Tuya light working in the current environment is an [Above Lights](http://alabovelights.com/) [Smart Bulb 9W, model AL1](http://alabovelights.com/pd.jsp?id=17).
@@ -135,11 +178,25 @@ To retreive your TUYA_DEVICE credentials, follow [codetheweb's](https://github.c
 
     ex: "TUYA_DEVICE={ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }"
 
+**Docker Secrets:** This variable can instead be specified in a secrets file, using the `TUYA_DEVICE_FILE` variable.
+
 **Note 1:** Status-Light will accept an FQDN instead of IP, as long as the name can be resolved. Tuya devices will typically register themselves with the last 6 digits of the device ID, for example `ESP_xxxxxx.local`.
 
 **Note 2:** For Status-Light's purposes, protocol can be 3.0+, but some older devices may not function correctly with the newer protocols, so this may have to be adjusted.
 
-### Webex: `WEBEX_PERSONID` and `WEBEX_BOTID`
+#### `TUYA_BRIGHTNESS`
+*Optional*
+
+Default Value: `128`
+
+Acceptable Range: `32`-`255`
+
+Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100%. Status-Light defaults to 50% brightness, `128`.
+
+**Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the brightness will cause Status-Light to revert to the default brightness.
+
+### **Webex** 
+#### `WEBEX_PERSONID`, `WEBEX_BOTID`
 *Required if `Webex` is present in `SOURCES`*
 
 Status-Light uses the [webexteamssdk](https://github.com/CiscoDevNet/webexteamssdk/) module for Webex status lookup.
@@ -154,12 +211,17 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
   * Sign into your Webex account, then under the "Try It" section, click "Run"
   * Copy the value id from the response shown
 
-### Office 365: `O365_APPID`, `O365_APPSECRET`
+**Docker Secrets:** These variables can instead be specified in secrets files, using the `WEBEX_PERSONID_FILE` and `WEBEX_BOTID_FILE` variables.
+
+### **Office 365** 
+#### `O365_APPID`, `O365_APPSECRET`
 *Required if `Office365` is present in `SOURCES`*
 
 Status-Light uses the [python-o365](https://github.com/O365/python-o365/) module for Office 365 status lookup.
 
 To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's](https://github.com/O365) [usage and authentication guide](https://github.com/O365/python-o365#usage).
+
+**Docker Secrets:** These variables can instead be specified in secrets files, using the `O365_APPID_FILE` and `O365_APPSECRET_FILE` variables.
 
 #### `O365_TOKENSTORE`
 *Optional*
@@ -167,3 +229,30 @@ To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's]
 Default value: `~`
 
 Defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users.
+
+### `SLEEP_SECONDS`
+*Optional*
+
+Default value: `5`
+
+Acceptable range: `5`-`60`
+
+Set the number of seconds between status checks.
+
+**Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the sleep seconds will cause Status-Light to revert to the default.
+
+### `LOGLEVEL`
+*Optional*
+
+Default value: `WARNING`
+
+Acceptable values, documented [here](https://docs.python.org/3/library/logging.html#levels):
+* `CRITICAL`
+* `ERROR`
+* `WARNING`
+* `INFO`
+* `DEBUG`
+
+Sets the log level for Status-Light. 
+
+**Note:** Status-Light makes no attempt to handle an invalid value in this variable. Any error parsing the log level will cause Status-Light to revert to the default.
