@@ -11,7 +11,8 @@ class Environment:
     tuyaDevice = None
     tuyaBrightness = 128
 
-    selectedSources = None
+    #32 - SOURCES variable default is wrong
+    selectedSources = [const.StatusSource.webex, const.StatusSource.office365]
 
     webexPersonID = None
     webexBotID = None
