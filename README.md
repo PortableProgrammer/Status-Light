@@ -139,9 +139,9 @@ secrets:
 
 - *Optional*
 - Available values:
-  - `Webex`
-  - `Office365`
-- Default value: `Webex,Office365`
+  - `webex`
+  - `office365`
+- Default value: `webex,office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
@@ -167,29 +167,33 @@ If specificed, requires at least one of the available options. This will control
 #### `AVAILABLE_STATUS`
 
 - Default value: `active`
-- By default, denotes that there is no active call or meeting right now, and no meetings scheduled within the next `5` minutes.
+- By default, denotes that there is no ongoing Webex call or meeting, and no Office 365 meetings scheduled within the next `5` minutes.
+  - This is the default *not busy* state. See [`OFF_STATUS`](#off_status) for an explanation of why the Office 365 `free` status is not included in this list by default, and why you may want to change that.
 
 #### `SCHEDULED_STATUS`
 
 - Default value: `busy,tentative`
-- By default, denotes that there is no active call or meeting right now, but a meeting is scheduled within the next `5` minutes.
+- By default, denotes that there is no ongoing Webex call or meeting, but an Office 365 meeting, that was either accepted or tentatively accepted, is scheduled within the next `5` minutes.
+  - This is the default *about to be busy* state.
 
 #### `BUSY_STATUS`
 
 - Default value: `call,donotdisturb,meeting,presenting,pending`
-- By default, denotes that there is an active call or meeting right now, or (in the case of `donotdisturb` or `presenting`) some other reason why the user could be considered *busy*.
+- By default, denotes that there is an ongoing Webex call or meeting, or (in the case of `donotdisturb` or `presenting`) some other reason why the user could be considered busy.
+  - This is the default *busy* state.
+- If the Webex "Show when in a calendar meeting" option is selected, and `webex` is present in [`SOURCES`](#sources), Webex will return a `meeting` status for any connected calendars, including Office 365.
 
 #### `OFF_STATUS`
 
-- Default value: `inactive,outofoffice,free,unknown`
+- Default value: `inactive,outofoffice,workingelsewhere,free,unknown`
 - By default, denotes that the user is not working now.
+  - This is the default *after hours* state.
 - In the case of `unknown`, this is essentially a fail-safe. If we can't determine the status, just turn the light off.
-- In the case of `outofoffice`, this is a personal preference. *I* don't need Status-Light to tell my family that I'm out of the office; they can see that.
+- In the case of `outofoffice` and `workingelsewhere`, this is a personal preference. I don't need Status-Light to tell my family that I'm somewhere else; they can see that.
 - In the case of `free`, there are a few reasons why it's in `OFF_STATUS` by default.
   - Typically, if the user is asking for both Webex and Office 365, the user will be `active` and `free` simultaneously, so `active` will always win.
-  - Since there is no Office 365 status for "out of work hours", Status-Light makes a  determination of `free`/`busy`/`tentative` by checking the user's availability within the next `5` minutes. In this scenario, at the end of the working day, the user is technically `free`, but there's no reason to keep the light on all night.
-  - In the case that Webex is not selected as a source, it is recommended to move `free` to `AVAILABLE_STATUS`, but the caveat above will apply in that scenario: the light may stay on all the time.
-  
+  - Status-Light makes a  determination of `free`/`busy`/`tentative` by checking the user's availability within the next `5` minutes. There is no 'off-hours' status in Office 365, which means, at the end of the working day, the user is technically `free`. In that instance, the light would be on during off hours, showing the selected [`AVAIALBLE_COLOR`](#available_color). Again, this is a personal preference; I don't want the light on while I'm not at work, and I am using Webex to handle [`AVAILABLE_STATUS`](#available_status).
+  - In the case that `webex` is not present in [`SOURCES`](#sources), it is recommended to move `free` to [`AVAILABLE_STATUS`](#available_status), but the caveat above will apply in that scenario: the light may stay on all the time.
 
 **Note 1:** Status-Light makes no attempt to handle invalid values in a list. In the case of an error, Status-Light will simply revert to the default value for that list.
 
@@ -197,7 +201,7 @@ If specificed, requires at least one of the available options. This will control
 
 #### **Status Precedence**
 
-Since the "most-busy" status should win when selecting a color, typically the Webex status will take precedence over Office 365. For example, if your Office 365 status is `busy` (you're scheduled to be in a meeting), and your Webex status is `meeting` (you're actively in the meeting), the Webex `meeting` status would take precedence, given the default values listed above. Generally, precedence is `BUSY_STATUS`, then `SCHEDULED_STATUS`, followed by `AVAILABLE_STATUS`, and finally `OFF_STATUS`. In more specific terms, the way Status-Light handles precedence is:
+Since the "most-busy" status should win when selecting a color, typically the Webex status will take precedence over Office 365. For example, if your Office 365 status is `busy` (you're scheduled to be in a meeting), and your Webex status is `meeting` (you're actively in the meeting), the Webex `meeting` status would take precedence, given the default values listed above. Generally, precedence is [`BUSY_STATUS`](#busy_status), then [`SCHEDULED_STATUS`](#scheduled_status), followed by [`AVAILABLE_STATUS`](#available_status), and finally [`OFF_STATUS`](#off_status). In more specific terms, the way Status-Light handles precedence is:
 
 ``` python
 # Webex status always wins except in specific scenarios
@@ -252,10 +256,11 @@ Status-Light requires a [Tuya](https://www.tuya.com/) device, which are white-bo
 
 Status-Light uses the [tuyaface](https://github.com/TradeFace/tuyaface/) module for Tuya communication.
 
-To retreive your TUYA_DEVICE credentials, follow [codetheweb's](https://github.com/codetheweb) [setup document](https://github.com/codetheweb/tuyapi/blob/master/docs/SETUP.md) for [tuyapi](https://github.com/codetheweb/tuyapi).
+To retreive your `TUYA_DEVICE` credentials, follow [codetheweb's](https://github.com/codetheweb) [setup document](https://github.com/codetheweb/tuyapi/blob/master/docs/SETUP.md) for [tuyapi](https://github.com/codetheweb/tuyapi).
+
+Example `TUYA_DEVICE` value:
 
 ``` shell
-Example:
 "TUYA_DEVICE={ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }"
 ```
 
@@ -268,8 +273,8 @@ Example:
 #### `TUYA_BRIGHTNESS`
 
 - *Optional*
-- Acceptable Range: `32`-`255`
-- Default Value: `128`
+- Acceptable range: `32`-`255`
+- Default value: `128`
 
 Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100% (though Tuya lights typically don't accept a brightness value below `32`). Status-Light defaults to 50% brightness, `128`.
 
@@ -279,7 +284,7 @@ Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding 
 
 #### `WEBEX_BOTID`
 
-- *Required if `Webex` is present in `SOURCES`*
+- *Required if `webex` is present in [`SOURCES`](#sources)*
 
 Status-Light uses the [webexteamssdk](https://github.com/CiscoDevNet/webexteamssdk/) module for Webex status lookup.
 
@@ -302,7 +307,7 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
 
 #### `O365_APPSECRET`
 
-- *Required if `Office365` is present in `SOURCES`*
+- *Required if `office365` is present in [`SOURCES`](#sources)*
 
 Status-Light uses the [python-o365](https://github.com/O365/python-o365/) module for Office 365 status lookup.
 
@@ -312,7 +317,7 @@ To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's]
 
 #### `O365_TOKENSTORE`
 
-- *Optional*
+- *Optional, only valid if `office365` is present in [`SOURCES`](#sources)*
 - Acceptable value: Any writable location on disk, e.g. `/path/to/token/`
 - Default value: `~`
 
@@ -331,7 +336,7 @@ Set the number of seconds between status checks.
 ### `LOGLEVEL`
 
 - *Optional*
-- Acceptable values, documented [here](https://docs.python.org/3/library/logging.html#levels):
+- Acceptable values, documented on [docs.python.org](https://docs.python.org/3/library/logging.html#levels):
   - `CRITICAL`
   - `ERROR`
   - `WARNING`
