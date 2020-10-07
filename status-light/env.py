@@ -21,7 +21,8 @@ class Environment:
     officeAppSecret = None
     officeTokenStore = '~'
 
-    offStatus = [const.Status.inactive, const.Status.outofoffice, const.Status.unknown, const.Status.free]
+    #38 - Working Elsewhere isn't handled
+    offStatus = [const.Status.inactive, const.Status.outofoffice, const.Status.workingelsewhere, const.Status.unknown, const.Status.free]
     availableStatus = [const.Status.active]
     scheduledStatus = [const.Status.busy, const.Status.tentative]
     busyStatus = [const.Status.call, const.Status.donotdisturb, const.Status.meeting, const.Status.presenting, const.Status.pending]
@@ -37,7 +38,8 @@ class Environment:
     logLevel = 'WARNING'
 
     def getSources(self):
-        self.selectedSources = self._parseSource(os.environ.get('SOURCES', None))
+        #32 - SOURCES variable default is wrong
+        self.selectedSources = self._parseSource(os.environ.get('SOURCES', self.selectedSources))
         return (None != self.selectedSources)
 
     def getTuya(self):
