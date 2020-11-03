@@ -1,13 +1,16 @@
-def ignore_exception(ignoreException = Exception, default = None):
-    """ Decorator for ignoring exception from a function
-    e.g.   @ignore_exception(DivideByZero)
-    e.g.2. ignore_exception(DivideByZero)(Divide)(2/0)
+import logging
+
+logger = logging.getLogger(__name__)
+
+# 41: Replace decoractor with utility function
+def try_parse_int(value, base = 10, default = None):
+    """For a given value and base, attempts to convert that value into an integer.
+
+    Value is, presumably, a string, though it can be any type that the int() function accepts:
+    https://docs.python.org/3/library/fuctnions.html#int
     """
-    def dec(function):
-        def _dec(*args, **kwargs):
-            try:
-                return function(*args, **kwargs)
-            except ignoreException:
-                return default
-        return _dec
-    return dec
+    try:
+        return int(value, base)
+    except BaseException as e:
+        logger.warning('Exception encountered during try_parse_int: %s, using default: %s', e, default)
+        return default
