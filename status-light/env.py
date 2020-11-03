@@ -12,7 +12,8 @@ class Environment:
     tuyaBrightness = 128
 
     #32 - SOURCES variable default is wrong
-    selectedSources = [const.StatusSource.webex, const.StatusSource.office365]
+    #32 Recurred; _parseSource expects a string, not a list. Convert the list to a string.
+    selectedSources = 'Webex,Office365'
 
     webexPersonID = None
     webexBotID = None
@@ -45,8 +46,8 @@ class Environment:
     def getTuya(self):
         # 30: This variable could contain secrets
         self.tuyaDevice = self._getEnvOrSecret('TUYA_DEVICE', None)
-        brightness_try_parse = util.ignore_exception(ValueError, self.tuyaBrightness)(int)
-        self.tuyaBrightness = brightness_try_parse(os.environ.get('TUYA_BRIGHTNESS', self.tuyaBrightness))
+        # 41: Replace decorator with utility funtion
+        self.tuyaBrightness = util.try_parse_int(os.environ.get('TUYA_BRIGHTNESS'), default = self.tuyaBrightness)
         return (None not in [self.tuyaDevice]) and self.tuyaBrightness >= 32 and self.tuyaBrightness <= 255
 
     def getWebex(self):
@@ -78,8 +79,8 @@ class Environment:
         return (None not in [self.offStatus, self.availableStatus, self.busyStatus, self.scheduledStatus])
 
     def getSleep(self):
-        sleep_try_parse = util.ignore_exception(ValueError, self.sleepSeconds)(int)
-        self.sleepSeconds = sleep_try_parse(os.environ.get('SLEEP_SECONDS', self.sleepSeconds))
+        # 41: Replace decorator with utility function
+        self.sleepSeconds = util.try_parse_int(os.environ.get('SLEEP_SECONDS'), default = self.sleepSeconds)
         return self.sleepSeconds >= 5 and self.sleepSeconds <= 60
 
     def getLogLevel(self):
@@ -94,7 +95,7 @@ class Environment:
         try:
             tempStatus = list(const.StatusSource[source.lower().strip()] for source in sourceString.split(','))
         except BaseException as e:
-            logger.warning('Exception encountered during _parseSourcr: %s', e)
+            logger.warning('Exception encountered during _parseSource: %s', e)
             tempStatus = None
         return tempStatus
 
