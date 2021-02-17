@@ -52,6 +52,7 @@ class TuyaLight:
         # Brightness should be next
         # Color must be before Mode
 
+        # The code below is the probable cause of #2. Upgrading the tuya client via #36 might help fix it.
         self.on()
         self.setSingleState(3, brightness)
         self.setSingleState(5, color)
@@ -67,14 +68,24 @@ class TuyaLight:
         # Yellow/Orange when in a meeting (Calendar)
         # Red when on a Webex call/meeting or DnD (due to the way that Webex Teams handles status priorities) - This takes priority over calendar
 
-        if status in environment.offStatus: 
-            self.off()
+        #43: Coalesce the statuses and only execute setState once. This will still allow a single status to be in more than one list, but will not cause the light to rapidly switch between states.
+        color = None
 
         if status in environment.availableStatus:
-            self.setState('colour', environment.availableColor, environment.tuyaBrightness)
+            color = environment.availableColor
 
         if status in environment.scheduledStatus:
-            self.setState('colour', environment.scheduledColor, environment.tuyaBrightness)
+            color = environment.scheduledColor
 
         if status in environment.busyStatus: 
-            self.setState('colour', environment.busyColor, environment.tuyaBrightness)
+            color = environment.busyColor
+
+        if color != None:
+            self.setState('colour', color, environment.tuyaBrightness)
+        # OffStatus has the lowest priority, so only check it if none of the others are valid
+        elif status in environment.offStatus:
+            self.off()
+        # In the case that we made it here without a valid state, just turn the light off and warn about it
+        else:
+            logger.warning('transitionStatus called with an invalid status: %s',status)
+            self.off()

@@ -197,7 +197,7 @@ If specificed, requires at least one of the available options. This will control
 
 **Note 1:** Status-Light makes no attempt to handle invalid values in a list. In the case of an error, Status-Light will simply revert to the default value for that list.
 
-**Note 2:** Status-Light makes no attempt to ensure that any given status is present in only a single list. In the case of a status in multiple lists, the order of precedence below applies as well. This can have the unintended side effect of the light cycling through different colors (or even states, if it's turned off first) before landing on the chosen color/state.
+**Note 2:** Status-Light makes no attempt to ensure that any given status is present in only a single list. In the case of a status in multiple lists, the order of precedence below applies as well.
 
 #### **Status Precedence**
 
@@ -210,17 +210,19 @@ if (webexStatus in availableStatus or webexStatus in offStatus) and officeStatus
   # Use the Office 365 status instead
   currentStatus = officeStatus
 
-if currentStatus in offStatus:
-  # Turn off the light
-
 if currentStatus in availableStatus:
-  # Set availableColor
+  # Get availableColor
 
 if currentStatus in scheduledStatus:
-  # Set scheduledColor
+  # Get scheduledColor
 
 if currentStatus in busyStatus:
-  # Set busyColor
+  # Get busyColor
+
+if currentColor != None:
+  # Set currentColor
+elif currentStatus in offStatus:
+  # Turn off the light
 ```
 
 ### **Colors**
