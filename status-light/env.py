@@ -41,14 +41,32 @@ class Environment:
     def getSources(self):
         #32 - SOURCES variable default is wrong
         self.selectedSources = self._parseSource(os.environ.get('SOURCES', self.selectedSources))
-        return (None != self.selectedSources)
+        returnValue = (None != self.selectedSources)
+        #34 - Better environment variable errors
+        # SOURCES is required
+        if not returnValue:
+            logger.warning('SOURCES - at least one source is required!')
+        return returnValue
 
     def getTuya(self):
+        returnValue = True
         # 30: This variable could contain secrets
         self.tuyaDevice = self._getEnvOrSecret('TUYA_DEVICE', None)
-        # 41: Replace decorator with utility funtion
+        #34 - Better environment variable errors
+        # TUYA_DEVICE is required
+        if (None in [self.tuyaDevice]):
+            logger.warning('TUYA_DEVICE is required!')
+            returnValue = False
+
+        # 41: Replace decorator with utility function
         self.tuyaBrightness = util.try_parse_int(os.environ.get('TUYA_BRIGHTNESS'), default = self.tuyaBrightness)
-        return (None not in [self.tuyaDevice]) and self.tuyaBrightness >= 32 and self.tuyaBrightness <= 255
+        #34 - Better environment variable errors
+        # TUYA_BRIGHTNESS should be within the range 32..255
+        if self.tuyaBrightness < 32 or self.tuyaBrightness > 255:
+            logger.warning('TUYA_BRIGHTNESS must be between 32 and 255!')
+            returnValue = False
+
+        return returnValue
 
     def getWebex(self):
         # 30: This variable could contain secrets
