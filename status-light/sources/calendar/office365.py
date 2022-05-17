@@ -47,6 +47,6 @@ class OfficeAPI:
             return const.Status[availability_view.replace(' ','').lower()]
         except (SystemExit, KeyboardInterrupt):
             return const.Status.unknown
-        except BaseException as exc:
-            logger.warning('Exception during OfficeAPI.getCurrentStatus: %s', exc)
+        except BaseException as ex: # pylint: disable=broad-except
+            logger.warning('Exception during OfficeAPI.getCurrentStatus: %s', ex)
             return const.Status.unknown

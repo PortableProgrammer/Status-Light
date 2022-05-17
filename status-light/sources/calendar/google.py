@@ -1,3 +1,4 @@
+"""Handles Google Calendar Free/Busy"""
 #47: Add Google Calendar support
 # https://github.com/portableprogrammer/Status-Light/
 
@@ -19,16 +20,21 @@ from utility import const
 
 logger = logging.getLogger(__name__)
 
-class GoogleAPI:
+class GoogleCalendarAPI:
+    """Handles Google Calendar Free/Busy"""
+
     credentialStore = '~'
     tokenStore = '~'
 
     CREDENTIALS_FILENAME = 'client_secret.json'
 
     # If modifying these scopes, delete the file token.json.
-    SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+    SCOPES = ['https://www.googleapis.com/auth/calendar.freebusy']
 
     def authenticate(self):
+        """Authenticates the user against the Google Calendar API.
+
+        Returns the authenticated credentials."""
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
@@ -52,12 +58,19 @@ class GoogleAPI:
         return creds
 
     def get_calendar_service(self):
+        """Builds the Google Calendar service object.
+
+        Returns the Calendar service object."""
         creds = self.authenticate()
 
         service = build('calendar', 'v3', credentials=creds)
         return service
 
     def get_current_status(self):
+        """Connects to the Google Calendar API to retrieve the user's free/busy
+        status within the next 5 minutes.
+
+        Returns the status returned from Google, or 'unknown' if an error occurs."""
         try:
             service = self.get_calendar_service()
             now = datetime.utcnow().isoformat() + 'Z'
@@ -85,6 +98,6 @@ class GoogleAPI:
                 return const.Status.free
         except (SystemExit, KeyboardInterrupt):
             return const.Status.unknown
-        except BaseException as exc:
-            logger.warning('Exception during GoogleAPI.getCurrentStatus: %s', exc)
+        except BaseException as ex: # pylint: disable=broad-except
+            logger.warning('Exception during GoogleAPI.getCurrentStatus: %s', ex)
             return const.Status.unknown

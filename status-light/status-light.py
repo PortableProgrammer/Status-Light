@@ -94,7 +94,7 @@ google_api = None
 if const.StatusSource.google in localEnv.selected_sources:
     if localEnv.get_google():
         logger.info('Requested Google')
-        google_api = google.GoogleAPI()
+        google_api = google.GoogleCalendarAPI()
         google_api.credentialStore = localEnv.google_credential_store
         google_api.tokenStore = localEnv.google_token_store
     else:
