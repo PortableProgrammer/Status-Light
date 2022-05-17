@@ -23,7 +23,8 @@ class Environment:
     officeTokenStore = '~'
 
     #47 - Add Google support
-    googleCredentialStore = '~'
+    # This is the relative path from status-light.py
+    googleCredentialStore = './utility/api/calendar/google'
     googleTokenStore = '~'
 
     #38 - Working Elsewhere isn't handled
@@ -89,7 +90,7 @@ class Environment:
 
     #47: Add Google support
     def getGoogle(self):
-        self.googleCredentialStore = self._getEnvOrSecret('GOOGLE_CREDENTIALSTORE', self.googleCredentialStore)
+        self.googleCredentialStore = os.environ.get('GOOGLE_CREDENTIALSTORE', self.googleCredentialStore)
         self.googleTokenStore = os.environ.get('GOOGLE_TOKENSTORE', self.googleTokenStore)
         return (None not in [self.googleCredentialStore, self.googleTokenStore])
 
