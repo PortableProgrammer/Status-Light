@@ -361,6 +361,11 @@ Status-Light is preconfigured with a Google API key that allows `readonly` acces
 
 Defines a writable location on disk where the Google tokens are stored. This location should be protected from other users.
 
+##### **Authorizing Status-Light**
+If you are running Status-Light locally, the first time the authentication flow runs, you will see a Google authentication prompt in your default browser, and responding to it should authorize Status-Light successfully, storing `token.json` in the directory specified here.
+
+Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-oauth-flows-safer.html#instructions-oob) OOB authentication flows for headless devices, if you are running Status-Light headless (e.g. in a Docker container), you will need to obtain your `token.json` file manually and place it into the directory specified here.
+
 **Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
 
 ### `SLEEP_SECONDS`
