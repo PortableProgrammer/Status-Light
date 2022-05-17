@@ -2,8 +2,8 @@ import os
 import re
 import logging
 
-import const
-import util
+from utility import const
+from utility import util
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,11 @@ class Environment:
     officeAppID = None
     officeAppSecret = None
     officeTokenStore = '~'
+
+    #47 - Add Google support
+    # This is the relative path from status-light.py
+    googleCredentialStore = './utility/api/calendar/google'
+    googleTokenStore = '~'
 
     #38 - Working Elsewhere isn't handled
     offStatus = [const.Status.inactive, const.Status.outofoffice, const.Status.workingelsewhere, const.Status.unknown, const.Status.free]
@@ -82,6 +87,12 @@ class Environment:
         self.officeAppSecret = self._getEnvOrSecret('O365_APPSECRET', None)
         self.officeTokenStore = os.environ.get('O365_TOKENSTORE', self.officeTokenStore)
         return (None not in [self.officeAppID, self.officeAppSecret, self.officeTokenStore])
+
+    #47: Add Google support
+    def getGoogle(self):
+        self.googleCredentialStore = os.environ.get('GOOGLE_CREDENTIALSTORE', self.googleCredentialStore)
+        self.googleTokenStore = os.environ.get('GOOGLE_TOKENSTORE', self.googleTokenStore)
+        return (None not in [self.googleCredentialStore, self.googleTokenStore])
 
     def getColors(self):
         self.availableColor = self._parseColor(os.environ.get('AVAILABLE_COLOR', None), self.availableColor)

@@ -2,9 +2,9 @@
 
 A basic status light that will show when I'm available or not. This was inspired by [matthewf01's](https://github.com/matthewf01) [WebexTeams-Status-Box](https://github.com/matthewf01/Webex-Teams-Status-Box), for basically the same reason: My 5-year-old needs some way to tell if he can run in screaming at me while I'm working from home.
 
-Status-Light will connect to multiple status sources (currently Cisco Webex and Microsoft Office 365), retrieve the current status of each, and then determine the most-busy status. It will then display this status on a remote RGB LED bulb (currently Tuya).
+Status-Light will connect to multiple status sources (e.g. collaboration suites like Webex and calendaring applications like Office 365 and Google), retrieve the current status of each, and then determine the most-busy status. It will then display this status on a remote RGB LED bulb.
 
-By default, Webex `call`, `meeting`, `donotdisturb`, or `presenting` statuses will show a red light, Office 365 `busy` and `tentative` statuses will show an orange light, and Webex `active` status will show a green light. All other statuses will turn the light off (i.e. `inactive` in Webex and `free` in Office 365).
+By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboration statuses will show a red light, `busy` and `tentative` calendar statuses will show an orange light, and the `active` collaboration status will show a green light. All other statuses will turn the light off (i.e. `inactive` in Webex and `free` in Office 365).
 
 ## Contents
 
@@ -35,6 +35,9 @@ By default, Webex `call`, `meeting`, `donotdisturb`, or `presenting` statuses wi
     - [`O365_APPID`](#o365_appid)
     - [`O365_APPSECRET`](#o365_appsecret)
     - [`O365_TOKENSTORE`](#o365_tokenstore)
+  - [Google](#google)
+    - [`GOOGLE_CREDENTIALSTORE`](#googlecredentialstore)
+    - [`GOOGLE_TOKENSTORE`](#googletokenstore)
   - [`SLEEP_SECONDS`](#sleep_seconds)
   - [`LOGLEVEL`](#loglevel)
 
@@ -86,6 +89,8 @@ services:
       - "O365_APPID=xxx"
       - "O365_APPSECRET=xxx"
       - "O365_TOKENSTORE=/data"
+      - "GOOGLE_TOKENSTORE=/data"
+      - "GOOGLE_CREDENTIALSTORE=/data"
     volumes:
       - type: bind
         source: /path/to/tokenstore
@@ -141,6 +146,7 @@ secrets:
 - Available values:
   - `webex`
   - `office365`
+  - `google`
 - Default value: `webex,office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
@@ -163,17 +169,20 @@ If specificed, requires at least one of the available options. This will control
     - `busy`
     - `outofoffice`
     - `workingelsewhere`
+  - Google
+    - `free`
+    - `busy`
 
 #### `AVAILABLE_STATUS`
 
 - Default value: `active`
-- By default, denotes that there is no ongoing Webex call or meeting, and no Office 365 meetings scheduled within the next `5` minutes.
-  - This is the default *not busy* state. See [`OFF_STATUS`](#off_status) for an explanation of why the Office 365 `free` status is not included in this list by default, and why you may want to change that.
+- By default, denotes that there is no ongoing Webex call or meeting, and no calendar meetings scheduled within the next `5` minutes.
+  - This is the default *not busy* state. See [`OFF_STATUS`](#off_status) for an explanation of why the calendar `free` status is not included in this list by default, and why you may want to change that.
 
 #### `SCHEDULED_STATUS`
 
 - Default value: `busy,tentative`
-- By default, denotes that there is no ongoing Webex call or meeting, but an Office 365 meeting, that was either accepted or tentatively accepted, is scheduled within the next `5` minutes.
+- By default, denotes that there is no ongoing Webex call or meeting, but a calendar meeting, that was either accepted or tentatively accepted, is scheduled within the next `5` minutes.
   - This is the default *about to be busy* state.
 
 #### `BUSY_STATUS`
@@ -181,7 +190,7 @@ If specificed, requires at least one of the available options. This will control
 - Default value: `call,donotdisturb,meeting,presenting,pending`
 - By default, denotes that there is an ongoing Webex call or meeting, or (in the case of `donotdisturb` or `presenting`) some other reason why the user could be considered busy.
   - This is the default *busy* state.
-- If the Webex "Show when in a calendar meeting" option is selected, and `webex` is present in [`SOURCES`](#sources), Webex will return a `meeting` status for any connected calendars, including Office 365.
+- If the Webex "Show when in a calendar meeting" option is selected, and `webex` is present in [`SOURCES`](#sources), Webex will return a `meeting` status for any connected calendars.
 
 #### `OFF_STATUS`
 
@@ -191,8 +200,8 @@ If specificed, requires at least one of the available options. This will control
 - In the case of `unknown`, this is essentially a fail-safe. If we can't determine the status, just turn the light off.
 - In the case of `outofoffice` and `workingelsewhere`, this is a personal preference. I don't need Status-Light to tell my family that I'm somewhere else; they can see that.
 - In the case of `free`, there are a few reasons why it's in `OFF_STATUS` by default.
-  - Typically, if the user is asking for both Webex and Office 365, the user will be `active` and `free` simultaneously, so `active` will always win.
-  - Status-Light makes a  determination of `free`/`busy`/`tentative` by checking the user's availability within the next `5` minutes. There is no 'off-hours' status in Office 365, which means, at the end of the working day, the user is technically `free`. In that instance, the light would be on during off hours, showing the selected [`AVAIALBLE_COLOR`](#available_color). Again, this is a personal preference; I don't want the light on while I'm not at work, and I am using Webex to handle [`AVAILABLE_STATUS`](#available_status).
+  - Typically, if the user is asking for both collaboration and calendar statuses, the user will be `active` (from collaboration) and `free` (from calendar) simultaneously, so `active` will always win.
+  - Status-Light makes a  determination of `free`/`busy`/`tentative` by checking the user's availability within the next `5` minutes. There is typically no 'off-hours' status in calendaring applications, which means, at the end of the working day, the user is technically `free`. In that instance, the light would be on during off hours, showing the selected [`AVAIALBLE_COLOR`](#available_color). Again, this is a personal preference; I don't want the light on while I'm not at work, and I am using Webex to handle [`AVAILABLE_STATUS`](#available_status).
   - In the case that `webex` is not present in [`SOURCES`](#sources), it is recommended to move `free` to [`AVAILABLE_STATUS`](#available_status), but the caveat above will apply in that scenario: the light may stay on all the time.
 
 **Note 1:** Status-Light makes no attempt to handle invalid values in a list. In the case of an error, Status-Light will simply revert to the default value for that list.
@@ -201,14 +210,17 @@ If specificed, requires at least one of the available options. This will control
 
 #### **Status Precedence**
 
-Since the "most-busy" status should win when selecting a color, typically the Webex status will take precedence over Office 365. For example, if your Office 365 status is `busy` (you're scheduled to be in a meeting), and your Webex status is `meeting` (you're actively in the meeting), the Webex `meeting` status would take precedence, given the default values listed above. Generally, precedence is [`BUSY_STATUS`](#busy_status), then [`SCHEDULED_STATUS`](#scheduled_status), followed by [`AVAILABLE_STATUS`](#available_status), and finally [`OFF_STATUS`](#off_status). In more specific terms, the way Status-Light handles precedence is:
+Since the "most-busy" status should win when selecting a color, typically the Webex status will take precedence over calendars. For example, if your calendar status is `busy` (you're scheduled to be in a meeting), and your collaboration status is `meeting` (you're actively in the meeting), the collaboration status would take precedence, given the default values listed above. Generally, precedence is [`BUSY_STATUS`](#busy_status), then [`SCHEDULED_STATUS`](#scheduled_status), followed by [`AVAILABLE_STATUS`](#available_status), and finally [`OFF_STATUS`](#off_status). In more specific terms, the way Status-Light handles precedence is:
 
 ``` python
 # Webex status always wins except in specific scenarios
 currentStatus = webexStatus
-if (webexStatus in availableStatus or webexStatus in offStatus) and officeStatus not in offStatus:
-  # Use the Office 365 status instead
-  currentStatus = officeStatus
+if (webexStatus in availableStatus or webexStatus in offStatus) and (officeStatus not in offStatus or googleStatus not in offStatus):
+  # Office 365 currently takes precedence over Google
+  if (officeStatus != const.Status.unknown):
+    currentStatus = officeStatus
+  else:
+    currentStatus = googleStatus
 
 if currentStatus in availableStatus:
   # Get availableColor
@@ -326,6 +338,35 @@ To retrieve your `O365_APPID` and `O365_APPSECRET` creds, follow [Python O365's]
 Defines a writable location on disk where the Office 365 tokens are stored. This location should be protected from other users.
 
 **Note:** This path is directory only. The python-o365 module will expect to persist a file within the directory supplied.
+
+### **Google**
+
+#### `GOOGLE_CREDENTIALSTORE`
+
+- *Optional, only valid if `google` is present in [`SOURCES`](#sources)*
+- Acceptable value: Any writable location on disk, e.g. `/path/to/creds/`
+- Default value: _preconfigured key_
+
+Defines a writable location on disk where the Google application credentials are stored. This location should be protected from other users.
+
+Status-Light is preconfigured with a Google API key that allows `readonly` access to Google calendars for the express purpose of reading free/busy status. If you prefer to roll your own API key, you may mount your own `client_secret.json` in any directory and provide that path in this variable.
+
+**Note:** This path is directory only. Status-Light expects to find a file named `client_secret.json` within the directory supplied.
+
+#### `GOOGLE_TOKENSTORE`
+
+- *Optional, only valid if `google` is present in [`SOURCES`](#sources)*
+- Acceptable value: Any writable location on disk, e.g. `/path/to/token/`
+- Default value: `~`
+
+Defines a writable location on disk where the Google tokens are stored. This location should be protected from other users.
+
+##### **Authorizing Status-Light**
+If you are running Status-Light locally, the first time the authentication flow runs, you will see a Google authentication prompt in your default browser, and responding to it should authorize Status-Light successfully, storing `token.json` in the directory specified here.
+
+Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-oauth-flows-safer.html#instructions-oob) OOB authentication flows for headless devices, if you are running Status-Light headless (e.g. in a Docker container), you will need to obtain your `token.json` file manually and place it into the directory specified here.
+
+**Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
 
 ### `SLEEP_SECONDS`
 
