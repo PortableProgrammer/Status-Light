@@ -3,7 +3,7 @@ import enum
 class Status(enum.Enum):
     unknown = 0
 
-    # Webex
+    # Collaboration (Webex)
     active = 1
     call = 2
     donotdisturb = 3
@@ -12,7 +12,7 @@ class Status(enum.Enum):
     pending = 6
     presenting = 7
 
-    #Office
+    # Calendars (Office, Google)
     free = 8
     tentative = 9
     busy = 10
@@ -39,6 +39,8 @@ class StatusSource(enum.Enum):
 
     webex = 1
     office365 = 2
+    #47: Add Google support
+    google = 3
 
     def _missing(self, value):
         return self.unknown

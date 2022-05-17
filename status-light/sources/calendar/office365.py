@@ -7,7 +7,7 @@ from datetime import timedelta
 import logging
 
 # Project imports
-import const
+from utility import const
 
 logger = logging.getLogger(__name__)
 

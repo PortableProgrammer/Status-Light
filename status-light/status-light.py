@@ -3,17 +3,19 @@
 # Module imports
 import sys
 import signal
-import os
+#import os
 import time
 import logging
 from datetime import datetime
 
 # Project imports
-import webex
-import office365
-import tuya
-import env
-import const
+from sources.collaboration import webex
+from sources.calendar import office365
+# 47 - Add Google support
+from sources.calendar import google
+from targets import tuya
+from utility import env
+from utility import const
 
 currentStatus = const.Status.unknown
 lastStatus = currentStatus
@@ -80,8 +82,21 @@ if const.StatusSource.office365 in localEnv.selectedSources:
         logger.warning('Requested Office 365, but could not find all environment variables!')
         sys.exit(1)
 
+# 47 - Add Google support
+googleAPI = None
+if const.StatusSource.google in localEnv.selectedSources:
+    if localEnv.getGoogle():
+        logger.info('Requested Google')
+        googleAPI = google.GoogleAPI()
+        googleAPI.credentialStore = localEnv.googleCredentialStore
+        googleAPI.tokenStore = localEnv.googleTokenStore
+    else:
+        logger.warning('Requested Google, but could not find all environment variables!')
+        sys.exit(1)
+
 # Tuya
 light = tuya.TuyaLight()
+# TUYA_DEVICE is a JSON string, and needs to be converted to an actual JSON object
 light.device = eval(localEnv.tuyaDevice)
 logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 # TODO: Connect to the device and ensure it's available
@@ -91,6 +106,7 @@ while shouldContinue:
     try:
         webexStatus = const.Status.unknown
         officeStatus = const.Status.unknown
+        googleStatus = const.Status.unknown
 
         # Webex Status
         if const.StatusSource.webex in localEnv.selectedSources:
@@ -99,14 +115,25 @@ while shouldContinue:
         # O365 Status (based on calendar)
         if const.StatusSource.office365 in localEnv.selectedSources:
             officeStatus = officeAPI.getCurrentStatus()
+
+        # Google Status (based on calendar)
+        if const.StatusSource.google in localEnv.selectedSources:
+            googleStatus = googleAPI.getCurrentStatus()
         
+        # TODO: Now that we have more than one calendar-based status source, build a real precedence module for these
         # Compare statii and pick a winner
-        logger.debug('Webex: %s | Office: %s', webexStatus, officeStatus)
+        logger.debug('Webex: %s | Office: %s | Google: %s', webexStatus, officeStatus, googleStatus)
         # Webex status always wins except in specific scenarios
         currentStatus = webexStatus
-        if (webexStatus in localEnv.availableStatus or webexStatus in localEnv.offStatus) and officeStatus not in localEnv.offStatus:
-            logger.debug('Using officeStatus: %s', officeStatus)
-            currentStatus = officeStatus
+        if (webexStatus in localEnv.availableStatus or webexStatus in localEnv.offStatus) and (officeStatus not in localEnv.offStatus or googleStatus not in localEnv.offStatus):
+            logger.debug('Using calendar-based status')
+            # Office should take precedence over Google for now
+            if (officeStatus != const.Status.unknown):
+                logger.debug('Using officeStatus: %s', officeStatus)
+                currentStatus = officeStatus
+            else:
+                logger.debug('Using googleStatus: %s', googleStatus)
+                currentStatus = googleStatus
         
         if lastStatus != currentStatus:
             lastStatus = currentStatus

@@ -5,7 +5,7 @@ from webexteamssdk import WebexTeamsAPI
 import logging
 
 # Project imports
-import const
+from utility import const
 
 logger = logging.getLogger(__name__)
 
