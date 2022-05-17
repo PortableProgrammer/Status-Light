@@ -1,9 +1,8 @@
 # https://github.com/portableprogrammer/Status-Light/
 
-# Module imports
+# Standard imports
 import sys
 import signal
-#import os
 import time
 import logging
 from datetime import datetime

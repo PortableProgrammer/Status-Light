@@ -1,11 +1,11 @@
 # https://github.com/portableprogrammer/Status-Light/
 
-import tuyaface
-from tuyaface import const as tf
-import os
+# Standard imports
 import time
-from datetime import datetime
 import logging
+
+# 3rd-party imports
+import tuyaface
 
 # Project imports
 from utility import const

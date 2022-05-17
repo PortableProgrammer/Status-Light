@@ -1,10 +1,13 @@
 # https://github.com/portableprogrammer/Status-Light/
 
-from O365 import Account
-from O365 import FileSystemTokenBackend
+# Standard imports
 from datetime import datetime 
 from datetime import timedelta
 import logging
+
+# 3rd-party imports
+from O365 import Account
+from O365 import FileSystemTokenBackend
 
 # Project imports
 from utility import const
