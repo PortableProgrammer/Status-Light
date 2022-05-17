@@ -12,6 +12,7 @@ def try_parse_int(value, base = 10, default = None):
     """
     try:
         return int(value, base)
-    except BaseException as e:
-        logger.warning('Exception encountered during try_parse_int: %s, using default: %s', e, default)
+    except BaseException as ex:
+        logger.warning('Exception encountered during try_parse_int: %s, using default: %s',
+            ex, default)
         return default

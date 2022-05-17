@@ -1,9 +1,9 @@
-#47: Add Google Calendar support 
+#47: Add Google Calendar support
 # https://github.com/portableprogrammer/Status-Light/
 
 # Standard imports
 import os.path
-from datetime import datetime 
+from datetime import datetime
 from datetime import timedelta
 import logging
 
@@ -24,7 +24,7 @@ class GoogleAPI:
     tokenStore = '~'
 
     CREDENTIALS_FILENAME = 'client_secret.json'
-    
+
     # If modifying these scopes, delete the file token.json.
     SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
@@ -33,34 +33,35 @@ class GoogleAPI:
         # created automatically when the authorization flow completes for the first
         # time.
         creds = None
-        normalizedTokenPath = os.path.normpath(self.tokenStore + '/token.json')
-        normalizedCredentialsPath = os.path.normpath(self.credentialStore + '/' + self.CREDENTIALS_FILENAME)
-        if os.path.exists(normalizedTokenPath):
-            creds = Credentials.from_authorized_user_file(normalizedTokenPath, self.SCOPES)
+        norm_token_path = os.path.normpath(self.tokenStore + '/token.json')
+        norm_cred_path = os.path.normpath(self.credentialStore + '/' + self.CREDENTIALS_FILENAME)
+        if os.path.exists(norm_token_path):
+            creds = Credentials.from_authorized_user_file(norm_token_path, self.SCOPES)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(normalizedCredentialsPath, self.SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(norm_cred_path, self.SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open(normalizedTokenPath, 'w') as token:
+            # Per the docs, encoding should only be used in 'text' mode, which we are not.
+            # pylint: disable=unspecified-encoding
+            with open(norm_token_path, 'w') as token:
                 token.write(creds.to_json())
         return creds
 
-    def getCalendarService(self):
+    def get_calendar_service(self):
         creds = self.authenticate()
 
         service = build('calendar', 'v3', credentials=creds)
         return service
 
-    def getCurrentStatus(self):
+    def get_current_status(self):
         try:
-            service = self.getCalendarService()
+            service = self.get_calendar_service()
             now = datetime.utcnow().isoformat() + 'Z'
             now_plus = (datetime.utcnow() + timedelta(minutes=5)).isoformat() + 'Z'
-            #freebusy_result = service.freebusy().query(items=[{"id": 'primary'}],timeMin=now, timeMax=now_plus).execute()
             query = {
                 "timeMin" : now,
                 "timeMax" : now_plus,
@@ -70,6 +71,9 @@ class GoogleAPI:
                     }
                 ]
             }
+            # Since the service instance of Resource is dynamically-generated,
+            # Pylint has no member definitions; ignore the 'no-member' error
+            # pylint: disable=no-member
             freebusy_result = service.freebusy().query(body=query).execute()
             logger.debug('Got Free/Busy Result: %s', freebusy_result)
             freebusy = freebusy_result['calendars']['primary']['busy']
@@ -81,7 +85,6 @@ class GoogleAPI:
                 return const.Status.free
         except (SystemExit, KeyboardInterrupt):
             return const.Status.unknown
-        except BaseException as e:
-            logger.warning('Exception during GoogleAPI.getCurrentStatus: %s',e)
-            # TODO: Don't be stupid, fix this
+        except BaseException as exc:
+            logger.warning('Exception during GoogleAPI.getCurrentStatus: %s', exc)
             return const.Status.unknown

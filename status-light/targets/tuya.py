@@ -16,28 +16,28 @@ logger = logging.getLogger(__name__)
 class TuyaLight:
     device = ''
 
-    def on(self):
-        return self.setSingleState(1, True)
+    def turn_on(self):
+        return self.set_single_state(1, True)
 
-    def off(self):
-        return self.setSingleState(1, False)
+    def turn_off(self):
+        return self.set_single_state(1, False)
 
-    def setSingleState(self, index, value, retry: int = 5):
+    def set_single_state(self, index, value, retry: int = 5):
         # We sometimes get a connection reset, or other errors, so let's retry after a second
         count = 0
         status = None
-        while (status == None and count < retry):
+        while (status is None and count < retry):
             try:
                 status = tuyaface.set_status(self.device, {index: value})
             except (SystemExit, KeyboardInterrupt):
                 count = retry # Break the loop
-            except BaseException as e:
-                logger.warning('Exception during setSingleState: %s',e)
+            except BaseException as exc:
+                logger.warning('Exception during setSingleState: %s', exc)
                 count = count + 1
                 time.sleep(1)
         return status
 
-    def setState(self, mode = 'white', color = 'ffffff', brightness: int = 128):
+    def set_state(self, mode = 'white', color = 'ffffff', brightness: int = 128):
         # DPS:
         # 1: Power, bool
         # 2: Mode, 'white' or 'colour'
@@ -52,40 +52,39 @@ class TuyaLight:
         # Brightness should be next
         # Color must be before Mode
 
-        # The code below is the probable cause of #2. Upgrading the tuya client via #36 might help fix it.
-        self.on()
-        self.setSingleState(3, brightness)
-        self.setSingleState(5, color)
-        self.setSingleState(2, mode)
+        # The code below is the probable cause of #2.
+        # Upgrading the tuya client via #36 might help fix it.
+        self.turn_on()
+        self.set_single_state(3, brightness)
+        self.set_single_state(5, color)
+        self.set_single_state(2, mode)
 
 
-    def getStatus(self):
+    def get_status(self):
         return tuyaface.status(self.device)
 
-    def transitionStatus(self, status: const.Status, environment: env.Environment):
-        # Take the statii and determine what we care about most
-        # White/Green/Off when available
-        # Yellow/Orange when in a meeting (Calendar)
-        # Red when on a Webex call/meeting or DnD (due to the way that Webex Teams handles status priorities) - This takes priority over calendar
-
-        #43: Coalesce the statuses and only execute setState once. This will still allow a single status to be in more than one list, but will not cause the light to rapidly switch between states.
+    def transition_status(self, status: const.Status, environment: env.Environment):
+        #43: Coalesce the statuses and only execute setState once.
+        # This will still allow a single status to be in more than one list,
+        # but will not cause the light to rapidly switch between states.
         color = None
 
-        if status in environment.availableStatus:
-            color = environment.availableColor
+        if status in environment.available_status:
+            color = environment.available_color
 
-        if status in environment.scheduledStatus:
-            color = environment.scheduledColor
+        if status in environment.scheduled_status:
+            color = environment.scheduled_color
 
-        if status in environment.busyStatus: 
-            color = environment.busyColor
+        if status in environment.busy_status:
+            color = environment.busy_color
 
-        if color != None:
-            self.setState('colour', color, environment.tuyaBrightness)
+        if color is not None:
+            self.set_state('colour', color, environment.tuya_brightness)
         # OffStatus has the lowest priority, so only check it if none of the others are valid
-        elif status in environment.offStatus:
-            self.off()
-        # In the case that we made it here without a valid state, just turn the light off and warn about it
+        elif status in environment.off_status:
+            self.turn_off()
+        # In the case that we made it here without a valid state,
+        # just turn the light off and warn about it
         else:
-            logger.warning('transitionStatus called with an invalid status: %s',status)
-            self.off()
+            logger.warning('transition_status called with an invalid status: %s',status)
+            self.turn_off()
