@@ -4,7 +4,7 @@ A basic status light that will show when I'm available or not. This was inspired
 
 Status-Light will connect to multiple status sources (e.g. collaboration suites like Webex and calendaring applications like Office 365 and Google), retrieve the current status of each, and then determine the most-busy status. It will then display this status on a remote RGB LED bulb.
 
-By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboratino statuses will show a red light, `busy` and `tentative` calendar statuses will show an orange light, and the `active` collaboration status will show a green light. All other statuses will turn the light off (i.e. `inactive` in Webex and `free` in Office 365).
+By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboration statuses will show a red light, `busy` and `tentative` calendar statuses will show an orange light, and the `active` collaboration status will show a green light. All other statuses will turn the light off (i.e. `inactive` in Webex and `free` in Office 365).
 
 ## Contents
 
