@@ -349,7 +349,7 @@ Defines a writable location on disk where the Office 365 tokens are stored. This
 
 Defines a writable location on disk where the Google application credentials are stored. This location should be protected from other users.
 
-Status-Light is preconfigured with a Google API key that allows `readonly` access to Google calendars for the express purpose of reading free/busy status. If you prefer to roll your own API key, you may mount your own `client_secret.json` in any directory and provide that path in this variable.
+Status-Light is preconfigured with a Google API key that allows `freebusy` access to Google calendars for the express purpose of reading free/busy status. If you prefer to roll your own API key, you may mount your own `client_secret.json` in any directory and provide that path in this variable.
 
 **Note:** This path is directory only. Status-Light expects to find a file named `client_secret.json` within the directory supplied.
 
