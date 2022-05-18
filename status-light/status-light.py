@@ -9,6 +9,8 @@ from datetime import datetime
 
 # Project imports
 from sources.collaboration import webex
+# 48 - Add Slack support
+from sources.collaboration import slack
 from sources.calendar import office365
 # 47 - Add Google support
 from sources.calendar import google
@@ -76,6 +78,17 @@ if const.StatusSource.webex in localEnv.selected_sources:
         logger.warning('Requested Webex, but could not find all environment variables!')
         sys.exit(1)
 
+slack_api = None
+if const.StatusSource.slack in localEnv.selected_sources:
+    if localEnv.get_slack():
+        logger.info('Requested Slack,')
+        slack_api = slack.SlackAPI()
+        slack_api.user_id = localEnv.slack_user_id
+        slack_api.bot_token= localEnv.slack_bot_token
+    else:
+        logger.warning('Requested Slack, but could not find all environment variables!')
+        sys.exit(1)
+
 office_api = None
 if const.StatusSource.office365 in localEnv.selected_sources:
     if localEnv.get_office():
@@ -113,12 +126,17 @@ logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 while shouldContinue:
     try:
         webexStatus = const.Status.unknown
+        slackStatus = const.Status.unknown
         officeStatus = const.Status.unknown
         googleStatus = const.Status.unknown
 
         # Webex Status
         if const.StatusSource.webex in localEnv.selected_sources:
             webexStatus = webex_api.get_person_status(localEnv.webex_person_id)
+
+        # Slack Status
+        if const.StatusSource.slack in localEnv.selected_sources:
+            slackStatus = slack_api.get_user_presence()
 
         # O365 Status (based on calendar)
         if const.StatusSource.office365 in localEnv.selected_sources:
@@ -131,11 +149,17 @@ while shouldContinue:
         # TODO: Now that we have more than one calendar-based status source,
         # build a real precedence module for these
         # Compare statii and pick a winner
-        logger.debug('Webex: %s | Office: %s | Google: %s', webexStatus, officeStatus, googleStatus)
-        # Webex status always wins except in specific scenarios
+        logger.debug('Webex: %s | Slack: %s | Office: %s | Google: %s', webexStatus, slackStatus, officeStatus, googleStatus)
+        # Collaboration status always wins except in specific scenarios
+        # Webex currently takes precendence over Slack
         currentStatus = webexStatus
-        if (webexStatus in localEnv.available_status or webexStatus in localEnv.off_status) \
-            and (officeStatus not in localEnv.off_status or googleStatus not in localEnv.off_status):
+        if webexStatus == const.Status.unknown or webexStatus in localEnv.off_status:
+            # Fall through to Slack
+            currentStatus = slackStatus
+
+        if (currentStatus in localEnv.available_status or currentStatus in localEnv.off_status) \
+            and (officeStatus not in localEnv.off_status
+            or googleStatus not in localEnv.off_status):
 
             logger.debug('Using calendar-based status')
             # Office should take precedence over Google for now
