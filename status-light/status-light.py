@@ -22,8 +22,9 @@ from sources.calendar import google
 from targets import tuya
 from utility import env
 from utility import enum
+from utility import util
 
-currentStatus = enum.Status.unknown
+currentStatus = enum.Status.UNKNOWN
 lastStatus = currentStatus
 shouldContinue = True
 
@@ -35,36 +36,26 @@ logger.info('Startup')
 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Startup')
 
 # Register for SIGHUP, SIGINT, SIGQUIT, SIGTERM
-# At the moment, we'll treat them all (but SIGTERM) the same and exit
+# At the moment, we'll treat them all the same and exit cleanly
 # Since these are OS-level calls, we'll just ignore the argument issues
 # pylint: disable=unused-argument
 def receive_signal(signal_number, frame):
     """Signals the endless while loop to exit, allowing a clean shutdown."""
-    logger.warning('\nSignal received: %s', signal_number)
-    # Since this controls the infinite while loop, it should stay
+    logger.warning('Signal received: %s', signal_number)
+    # TODO: Find a better way to handle this
     # pylint: disable=global-statement
     global shouldContinue
     shouldContinue = False
-    return
 
-# SIGTERM should be handled special
-# Since these are OS-level calls, we'll just ignore the argument issues
-# pylint: disable=unused-argument
-def receive_terminate(signal_number, frame):
-    """Immediately calls sys.exit() in response to a SIGTERM without explicitly
-    waiting for a clean shutdown."""
-    logger.warning('\nSIGTERM received, terminating immediately')
-    sys.exit(0)
-
-signals = [signal.SIGHUP, signal.SIGINT, signal.SIGQUIT]
+signals = [signal.SIGHUP, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
 for sig in signals:
     signal.signal(sig, receive_signal)
-signal.signal(signal.SIGTERM, receive_terminate)
 
 # Validate environment variables in a structured way
 localEnv = env.Environment()
 if False in [localEnv.get_sources(), localEnv.get_tuya(), localEnv.get_colors(),
-    localEnv.get_status(), localEnv.get_sleep(), localEnv.get_log_level()]:
+    localEnv.get_status(), localEnv.get_active_time(), localEnv.get_sleep(),
+    localEnv.get_log_level()]:
 
     # We failed to gather some environment variables
     logger.warning('Failed to find all environment variables!')
@@ -77,7 +68,7 @@ logger.setLevel(localEnv.log_level)
 
 # Depending on the selected sources, get the environment
 webex_api = None
-if enum.StatusSource.webex in localEnv.selected_sources:
+if enum.StatusSource.WEBEX in localEnv.selected_sources:
     if localEnv.get_webex():
         logger.info('Requested Webex')
         webex_api = webex.WebexAPI()
@@ -87,7 +78,7 @@ if enum.StatusSource.webex in localEnv.selected_sources:
         sys.exit(1)
 
 slack_api = None
-if enum.StatusSource.slack in localEnv.selected_sources:
+if enum.StatusSource.SLACK in localEnv.selected_sources:
     if localEnv.get_slack():
         logger.info('Requested Slack,')
         slack_api = slack.SlackAPI()
@@ -98,7 +89,7 @@ if enum.StatusSource.slack in localEnv.selected_sources:
         sys.exit(1)
 
 office_api = None
-if enum.StatusSource.office365 in localEnv.selected_sources:
+if enum.StatusSource.OFFICE365 in localEnv.selected_sources:
     if localEnv.get_office():
         logger.info('Requested Office 365')
         office_api = office365.OfficeAPI()
@@ -112,7 +103,7 @@ if enum.StatusSource.office365 in localEnv.selected_sources:
 
 # 47 - Add Google support
 google_api = None
-if enum.StatusSource.google in localEnv.selected_sources:
+if enum.StatusSource.GOOGLE in localEnv.selected_sources:
     if localEnv.get_google():
         logger.info('Requested Google')
         google_api = google.GoogleCalendarAPI()
@@ -131,64 +122,95 @@ logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 # TODO: Connect to the device and ensure it's available
 #light.getCurrentStatus()
 
+outside_hours = False
 while shouldContinue:
     try:
-        webexStatus = enum.Status.unknown
-        slackStatus = enum.Status.unknown
-        officeStatus = enum.Status.unknown
-        googleStatus = enum.Status.unknown
+        # Decide if we need to poll at this time
+        if util.is_active_hours(localEnv.active_days, localEnv.active_hours_start,
+            localEnv.active_hours_end):
 
-        # Webex Status
-        if enum.StatusSource.webex in localEnv.selected_sources:
-            webexStatus = webex_api.get_person_status(localEnv.webex_person_id)
+            outside_hours = False
 
-        # Slack Status
-        if enum.StatusSource.slack in localEnv.selected_sources:
-            slackStatus = slack_api.get_user_presence()
+            webexStatus = enum.Status.UNKNOWN
+            slackStatus = enum.Status.UNKNOWN
+            officeStatus = enum.Status.UNKNOWN
+            googleStatus = enum.Status.UNKNOWN
 
-        # O365 Status (based on calendar)
-        if enum.StatusSource.office365 in localEnv.selected_sources:
-            officeStatus = office_api.get_current_status()
+            logger_format = " {}: {} |"
+            logger_string = ""
 
-        # Google Status (based on calendar)
-        if enum.StatusSource.google in localEnv.selected_sources:
-            googleStatus = google_api.get_current_status()
+            # Webex Status
+            if enum.StatusSource.WEBEX in localEnv.selected_sources:
+                webexStatus = webex_api.get_person_status(localEnv.webex_person_id)
+                logger_string += logger_format.format(enum.StatusSource.WEBEX.name.capitalize(),
+                    webexStatus.name.lower())
 
-        # TODO: Now that we have more than one calendar-based status source,
-        # build a real precedence module for these
-        # Compare statii and pick a winner
-        logger.debug('Webex: %s | Slack: %s | Office: %s | Google: %s',
-            webexStatus, slackStatus, officeStatus, googleStatus)
-        # Collaboration status always wins except in specific scenarios
-        # Webex currently takes precendence over Slack
-        currentStatus = webexStatus
-        if webexStatus == enum.Status.unknown or webexStatus in localEnv.off_status:
-            # Fall through to Slack
-            currentStatus = slackStatus
+            # Slack Status
+            if enum.StatusSource.SLACK in localEnv.selected_sources:
+                slackStatus = slack_api.get_user_presence()
+                logger_string += logger_format.format(enum.StatusSource.SLACK.name.capitalize(),
+                    slackStatus.name.lower())
 
-        if (currentStatus in localEnv.available_status or currentStatus in localEnv.off_status) \
-            and (officeStatus not in localEnv.off_status
-            or googleStatus not in localEnv.off_status):
+            # O365 Status (based on calendar)
+            if enum.StatusSource.OFFICE365 in localEnv.selected_sources:
+                officeStatus = office_api.get_current_status()
+                logger_string += logger_format.format(enum.StatusSource.OFFICE365.name.capitalize(),
+                    officeStatus.name.lower())
 
-            logger.debug('Using calendar-based status')
-            # Office should take precedence over Google for now
-            if officeStatus != enum.Status.unknown:
-                logger.debug('Using officeStatus: %s', officeStatus)
-                currentStatus = officeStatus
+            # Google Status (based on calendar)
+            if enum.StatusSource.GOOGLE in localEnv.selected_sources:
+                googleStatus = google_api.get_current_status()
+                logger_string += logger_format.format(enum.StatusSource.GOOGLE.name.capitalize(),
+                    googleStatus.name.lower())
+
+            #logger.debug('Webex: %s | Slack: %s | Office: %s | Google: %s',
+            #    webexStatus, slackStatus, officeStatus, googleStatus)
+
+            logger.info(logger_string.lstrip().rstrip(' |'))
+
+            # TODO: Now that we have more than one calendar-based status source,
+            # build a real precedence module for these
+            # Compare statii and pick a winner
+            # Collaboration status always wins except in specific scenarios
+            # Webex currently takes precendence over Slack
+            currentStatus = webexStatus
+            if webexStatus == enum.Status.UNKNOWN or webexStatus in localEnv.off_status:
+                logger.debug('Using slackStatus: %s', slackStatus)
+                # Fall through to Slack
+                currentStatus = slackStatus
+
+            if (currentStatus in localEnv.available_status or
+                currentStatus in localEnv.off_status) \
+                and (officeStatus not in localEnv.off_status
+                or googleStatus not in localEnv.off_status):
+
+                logger.debug('Using calendar-based status')
+                # Office should take precedence over Google for now
+                if officeStatus != enum.Status.UNKNOWN:
+                    logger.debug('Using officeStatus: %s', officeStatus)
+                    currentStatus = officeStatus
+                else:
+                    logger.debug('Using googleStatus: %s', googleStatus)
+                    currentStatus = googleStatus
+
+            if lastStatus != currentStatus:
+                lastStatus = currentStatus
+
+                print()
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                    'Found new status:',currentStatus, end='', flush=True)
+                logger.info('Transitioning to %s',currentStatus)
+                light.transition_status(currentStatus, localEnv)
             else:
-                logger.debug('Using googleStatus: %s', googleStatus)
-                currentStatus = googleStatus
+                print('.', end='', flush=True)
 
-        if lastStatus != currentStatus:
-            lastStatus = currentStatus
-
-            print()
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
-                'Found new status:',currentStatus, end='', flush=True)
-            logger.info('Transitioning to %s',currentStatus)
-            light.transition_status(currentStatus, localEnv)
         else:
-            print('.', end='', flush=True)
+            if  outside_hours:
+                logger.debug('Already transitioned to off, doing nothing')
+            else:
+                logger.info('Outside of active hours, transitioning to off')
+                light.turn_off()
+            outside_hours = True
 
         # Sleep for a few seconds
         time.sleep(localEnv.sleep_seconds)

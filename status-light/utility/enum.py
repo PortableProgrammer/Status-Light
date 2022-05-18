@@ -8,49 +8,80 @@ Enumeration Definition
 # Standard imports
 import enum
 
-class Status(enum.Enum):
-    unknown = 0
+class StatusSource(enum.IntEnum):
+    """Status Sources"""
+    UNKNOWN = enum.auto()
 
-    # Collaboration (Webex, Slack)
-    active = 1
-    call = 2
-    donotdisturb = 3
-    inactive = 4
-    meeting = 5
-    pending = 6
-    presenting = 7
-
-    # Calendars (Office, Google)
-    free = 8
-    tentative = 9
-    busy = 10
-    outofoffice = 11
-    workingelsewhere = 12
-
-    def _missing_(self, value): # pylint: disable=arguments-differ
-        return self.unknown
-
-class Color(enum.Enum):
-    unknown = 'xxxxxx'
-
-    red = 'ff0000'
-    yellow = 'ffff00'
-    orange = 'ff9000'
-    green = '00ff00'
-    blue = '0000f'
-
-    def _missing_(self, value): # pylint: disable=arguments-differ
-        return self.unknown
-
-class StatusSource(enum.Enum):
-    unknown = 0
-
-    webex = 1
-    office365 = 2
+    WEBEX = enum.auto()
+    OFFICE365 = enum.auto()
     # 47 - Add Google support
-    google = 3
+    GOOGLE = enum.auto()
     # 48 - Add Slack suport
-    slack = 4
+    SLACK = enum.auto()
 
     def _missing(self, value): # pylint: disable=unused-argument
-        return self.unknown
+        return self.UNKNOWN
+
+class Status(enum.IntEnum):
+    """User statuses"""
+    UNKNOWN = enum.auto()
+
+    # Collaboration (Webex, Slack)
+    ACTIVE = enum.auto()
+    CALL = enum.auto()
+    DONOTDISTURB = enum.auto()
+    INACTIVE = enum.auto()
+    MEETING = enum.auto()
+    PENDING = enum.auto()
+    PRESENTING = enum.auto()
+
+    # Calendars (Office, Google)
+    FREE = enum.auto()
+    TENTATIVE = enum.auto()
+    BUSY = enum.auto()
+    OUTOFOFFICE = enum.auto()
+    WORKINGELSEWHERE = enum.auto()
+
+    def _missing_(self, value): # pylint: disable=arguments-differ
+        return self.UNKNOWN
+
+class Color(enum.Enum):
+    """Default Colors"""
+    UNKNOWN = 'xxxxxx'
+
+    RED = 'ff0000'
+    YELLOW = 'ffff00'
+    ORANGE = 'ff9000'
+    GREEN = '00ff00'
+    BLUE = '0000f'
+
+    def _missing_(self, value): # pylint: disable=arguments-differ
+        return self.UNKNOWN
+
+class Weekday(enum.IntEnum):
+    """Days of the week"""
+    MONDAY = 0
+    TUESDAY = 1
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
+
+    UNKNOWN = 7
+
+    def _missing(self, value): # pylint: disable=unused-argument
+        return self.UNKNOWN
+
+class LogLevel(enum.IntEnum):
+    """Log Levels"""
+    CRITICAL = enum.auto()
+    ERROR = enum.auto()
+    WARNING = enum.auto()
+    INFO = enum.auto()
+    DEBUG = enum.auto()
+
+    UNKNOWN = enum.auto()
+
+    def _missing(self, value): # pylint: disable=unused-argument
+        return self.UNKNOWN

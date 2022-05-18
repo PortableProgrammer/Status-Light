@@ -422,6 +422,38 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 **Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
 
 ---
+### **Active Times**
+If you prefer to leave Status-Light running all the time (e.g. headless in a Docker container), you may wish to disable status polling during off hours.
+
+**Note:** This implementation is fairly basic, assuming that active hours are identical on all active days, and that the active hours will start and end on the same day. This may preclude, for example, configuring active hours that span days (e.g. overnights) or differing schedules on specific days.
+
+#### `ACTIVE_DAYS`
+
+A list of days that Status-Light will be actively polling status sources.
+
+- *Optional*
+- Acceptable values:
+  - `Monday`
+  - `Tuesday`
+  - `Wednesday`
+  - `Thursday`
+  - `Friday`
+  - `Saturday`
+  - `Sunday`
+- Default value: `Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday`
+
+#### `ACTIVE_HOURS_START`
+
+#### `ACTIVE_HOURS_END`
+
+A time, in 24-hour format, signifying the start and end of the active hours on any active day.
+
+- *Optional*
+- Default values:
+  - `ACTIVE_HOURS_START`: `00:00:00`
+  - `ACTIVE_HOURS_END`: `23:59:59`
+
+---
 ### `SLEEP_SECONDS`
 
 - *Optional*
