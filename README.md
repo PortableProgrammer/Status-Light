@@ -9,7 +9,7 @@ By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboration sta
 ## Contents
 
 - [Python Usage Example](#python-usage-example)
-- [Docker Usage Example](#docker-usage-example)
+- [Docker Usage Examples](#docker-usage-examples)
   - [Commandline with Webex only](#commandline-with-webex-only)
   - [Compose with all options](#compose-with-all-options)
   - [Compose with secrets](#compose-with-secrets)
@@ -41,6 +41,7 @@ By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboration sta
   - [Google](#google)
     - [`GOOGLE_CREDENTIALSTORE`](#googlecredentialstore)
     - [`GOOGLE_TOKENSTORE`](#googletokenstore)
+      - [Auhorizing Status-Light](#authorizing-status-light)
   - [`SLEEP_SECONDS`](#sleep_seconds)
   - [`LOGLEVEL`](#loglevel)
 
@@ -54,7 +55,7 @@ WEBEX_BOTID=xxx \
 python -u /path/to/src/status-light.py
 ```
 
-## Docker Usage Example
+## Docker Usage Examples
 
 ### Commandline with Webex only
 
@@ -157,6 +158,7 @@ secrets:
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
+---
 ### **Statuses**
 
 - *Optional*
@@ -231,7 +233,9 @@ if webexStatus == const.Status.unknown or webexStatus in offStatus:
   # Fall through to Slack
   currentStatus = slackStatus
 
-if (currentStatus in availableStatus or currentStatus in offStatus) and (officeStatus not in offStatus or googleStatus not in offStatus):
+if (currentStatus in availableStatus or currentStatus in offStatus) 
+  and (officeStatus not in offStatus or googleStatus not in offStatus):
+
   # Office 365 currently takes precedence over Google
   if (officeStatus != const.Status.unknown):
     currentStatus = officeStatus
@@ -253,6 +257,7 @@ elif currentStatus in offStatus:
   # Turn off the light
 ```
 
+---
 ### **Colors**
 
 - *Optional*
@@ -276,6 +281,7 @@ elif currentStatus in offStatus:
 
 - Default value: `red`
 
+---
 ### **Tuya**
 
 #### `TUYA_DEVICE`
@@ -308,6 +314,7 @@ Example `TUYA_DEVICE` value:
 
 Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100% (though Tuya lights typically don't accept a brightness value below `32`). Status-Light defaults to 50% brightness, `128`.
 
+---
 ### **Webex**
 
 #### `WEBEX_PERSONID`
@@ -331,6 +338,7 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
 
 **Docker Secrets:** These variables can instead be specified in secrets files, using the `WEBEX_PERSONID_FILE` and `WEBEX_BOTID_FILE` variables.
 
+---
 ### **Slack**
 
 #### `SLACK_USER_ID`
@@ -358,6 +366,7 @@ To retrieve your `SLACK_BOT_TOKEN`, see below:
 
 **Note:** The `SLACK_BOT_TOKEN` is Workspace-specific, meaning you will need to create a new bot for each Slack Workspace.
 
+---
 ### **Office 365**
 
 #### `O365_APPID`
@@ -382,6 +391,7 @@ Defines a writable location on disk where the Office 365 tokens are stored. This
 
 **Note:** This path is directory only. The python-o365 module will expect to persist a file within the directory supplied.
 
+---
 ### **Google**
 
 #### `GOOGLE_CREDENTIALSTORE`
@@ -411,6 +421,7 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 
 **Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
 
+---
 ### `SLEEP_SECONDS`
 
 - *Optional*
@@ -419,6 +430,7 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 
 Set the number of seconds between status checks.
 
+---
 ### `LOGLEVEL`
 
 - *Optional*
