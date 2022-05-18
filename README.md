@@ -94,6 +94,8 @@ services:
       - "O365_TOKENSTORE=/data"
       - "GOOGLE_TOKENSTORE=/data"
       - "GOOGLE_CREDENTIALSTORE=/data"
+      - "SLACK_USER_ID=xxx"
+      - "SLACK_BOT_TOKEN=xxx"
     volumes:
       - type: bind
         source: /path/to/tokenstore
