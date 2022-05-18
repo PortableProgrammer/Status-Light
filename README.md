@@ -6,45 +6,6 @@ Status-Light will connect to multiple status sources (e.g. collaboration suites 
 
 By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboration statuses will show a red light, `busy` and `tentative` calendar statuses will show an orange light, and the `active` collaboration status will show a green light. All other statuses will turn the light off (i.e. `inactive` in Webex and `free` in Office 365).
 
-## Contents
-
-- [Python Usage Example](#python-usage-example)
-- [Docker Usage Examples](#docker-usage-examples)
-  - [Commandline with Webex only](#commandline-with-webex-only)
-  - [Compose with all options](#compose-with-all-options)
-  - [Compose with secrets](#compose-with-secrets)
-- [Environment Variables](#environment-variables)
-  - [`SOURCES`](#sources)
-  - [Statuses](#statuses)
-    - [`AVAILABLE_STATUS`](#available_status)
-    - [`SCHEDULED_STATUS`](#scheduled_status)
-    - [`BUSY_STATUS`](#busy_status)
-    - [`OFF_STATUS`](#off_status)
-    - [Status Precedence](#status-precedence)
-  - [Colors](#colors)
-    - [`AVAILABLE_COLOR`](#available_color)
-    - [`SCHEDULED_COLOR`](#scheduled_color)
-    - [`BUSY_COLOR`](#busy_color)
-  - [Tuya](#tuya)
-    - [`TUYA_DEVICE`](#tuya_device)
-    - [`TUYA_BRIGHTNESS`](#tuya_brightness)
-  - [Webex](#webex)
-    - [`WEBEX_PERSONID`](#webex_personid)
-    - [`WEBEX_BOTID`](#webex_botid)
-  - [Slack](#slack)
-    - [`SLACK_USER_ID`](#slack_user_id)
-    - [`SLACK_BOT_TOKEN`](#slack_bot_token)
-  - [Office 365](#office-365)
-    - [`O365_APPID`](#o365_appid)
-    - [`O365_APPSECRET`](#o365_appsecret)
-    - [`O365_TOKENSTORE`](#o365_tokenstore)
-  - [Google](#google)
-    - [`GOOGLE_CREDENTIALSTORE`](#googlecredentialstore)
-    - [`GOOGLE_TOKENSTORE`](#googletokenstore)
-      - [Auhorizing Status-Light](#authorizing-status-light)
-  - [`SLEEP_SECONDS`](#sleep_seconds)
-  - [`LOGLEVEL`](#loglevel)
-
 ## Python Usage Example
 
 ``` shell
@@ -97,6 +58,11 @@ services:
       - "GOOGLE_CREDENTIALSTORE=/data"
       - "SLACK_USER_ID=xxx"
       - "SLACK_BOT_TOKEN=xxx"
+      - "ACTIVE_DAYS=Monday,Tuesday,Wednesday,Thursday,Friday"
+      - "ACTIVE_HOURS_START=08:00:00"
+      - "ACTIVE_HOURS_END=17:00:00"
+      - "SLEEP_SECONDS=5"
+      - "LOGLEVEL=WARNING"
     volumes:
       - type: bind
         source: /path/to/tokenstore
