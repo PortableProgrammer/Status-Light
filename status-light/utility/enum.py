@@ -53,7 +53,7 @@ class Color(enum.Enum):
     YELLOW = 'ffff00'
     ORANGE = 'ff9000'
     GREEN = '00ff00'
-    BLUE = '0000f'
+    BLUE = '0000ff'
 
     def _missing_(self, value): # pylint: disable=arguments-differ
         return self.UNKNOWN
