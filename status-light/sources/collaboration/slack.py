@@ -45,7 +45,7 @@ class SlackAPI:
         client = self.get_client()
         response = None
         user_info = None
-        return_value = enum.Status.unknown
+        return_value = enum.Status.UNKNOWN
         try:
             # If we want to check for DnD or Huddle (busy or call),
             if check_dnd or check_huddle:
@@ -54,21 +54,21 @@ class SlackAPI:
                 if user_info['profile']['status_emoji'] == ':headphones:' \
                     and user_info['profile']['status_text'].startsWith('In a huddle'):
 
-                    return_value = enum.Status.meeting
+                    return_value = enum.Status.MEETING
 
-            if return_value is enum.Status.unknown:
+            if return_value is enum.Status.UNKNOWN:
                 response = client.users_getPresence(user=self.user_id)
                 match response.data['presence']: # pylint: disable=no-member
                     case "active":
-                        return_value = enum.Status.active
+                        return_value = enum.Status.ACTIVE
                     case "away":
-                        return_value = enum.Status.inactive
+                        return_value = enum.Status.INACTIVE
             return return_value
         except (SystemExit, KeyboardInterrupt):
             pass
         except SlackApiError as ex:
             logger.warning('Exception during get_user_info: %s', ex.response['error'])
-            return enum.Status.unknown
+            return enum.Status.UNKNOWN
         except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception during get_user_presence: %s', ex)
-            return enum.Status.unknown
+            return enum.Status.UNKNOWN

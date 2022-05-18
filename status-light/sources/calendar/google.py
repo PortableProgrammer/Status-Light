@@ -97,12 +97,12 @@ class GoogleCalendarAPI:
             freebusy = freebusy_result['calendars']['primary']['busy']
             if freebusy and len(freebusy) > 0:
                 logger.debug('Found Busy Result: %s', freebusy)
-                return enum.Status.busy
+                return enum.Status.BUSY
             else:
                 logger.debug('No Free/Busy Result, assuming Free')
-                return enum.Status.free
+                return enum.Status.FREE
         except (SystemExit, KeyboardInterrupt):
-            return enum.Status.unknown
+            return enum.Status.UNKNOWN
         except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception during GoogleAPI.getCurrentStatus: %s', ex)
-            return enum.Status.unknown
+            return enum.Status.UNKNOWN

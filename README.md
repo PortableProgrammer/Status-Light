@@ -6,44 +6,6 @@ Status-Light will connect to multiple status sources (e.g. collaboration suites 
 
 By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboration statuses will show a red light, `busy` and `tentative` calendar statuses will show an orange light, and the `active` collaboration status will show a green light. All other statuses will turn the light off (i.e. `inactive` in Webex and `free` in Office 365).
 
-## Contents
-
-- [Python Usage Example](#python-usage-example)
-- [Docker Usage Example](#docker-usage-example)
-  - [Commandline with Webex only](#commandline-with-webex-only)
-  - [Compose with all options](#compose-with-all-options)
-  - [Compose with secrets](#compose-with-secrets)
-- [Environment Variables](#environment-variables)
-  - [`SOURCES`](#sources)
-  - [Statuses](#statuses)
-    - [`AVAILABLE_STATUS`](#available_status)
-    - [`SCHEDULED_STATUS`](#scheduled_status)
-    - [`BUSY_STATUS`](#busy_status)
-    - [`OFF_STATUS`](#off_status)
-    - [Status Precedence](#status-precedence)
-  - [Colors](#colors)
-    - [`AVAILABLE_COLOR`](#available_color)
-    - [`SCHEDULED_COLOR`](#scheduled_color)
-    - [`BUSY_COLOR`](#busy_color)
-  - [Tuya](#tuya)
-    - [`TUYA_DEVICE`](#tuya_device)
-    - [`TUYA_BRIGHTNESS`](#tuya_brightness)
-  - [Webex](#webex)
-    - [`WEBEX_PERSONID`](#webex_personid)
-    - [`WEBEX_BOTID`](#webex_botid)
-  - [Slack](#slack)
-    - [`SLACK_USER_ID`](#slack_user_id)
-    - [`SLACK_BOT_TOKEN`](#slack_bot_token)
-  - [Office 365](#office-365)
-    - [`O365_APPID`](#o365_appid)
-    - [`O365_APPSECRET`](#o365_appsecret)
-    - [`O365_TOKENSTORE`](#o365_tokenstore)
-  - [Google](#google)
-    - [`GOOGLE_CREDENTIALSTORE`](#googlecredentialstore)
-    - [`GOOGLE_TOKENSTORE`](#googletokenstore)
-  - [`SLEEP_SECONDS`](#sleep_seconds)
-  - [`LOGLEVEL`](#loglevel)
-
 ## Python Usage Example
 
 ``` shell
@@ -54,7 +16,7 @@ WEBEX_BOTID=xxx \
 python -u /path/to/src/status-light.py
 ```
 
-## Docker Usage Example
+## Docker Usage Examples
 
 ### Commandline with Webex only
 
@@ -96,6 +58,11 @@ services:
       - "GOOGLE_CREDENTIALSTORE=/data"
       - "SLACK_USER_ID=xxx"
       - "SLACK_BOT_TOKEN=xxx"
+      - "ACTIVE_DAYS=Monday,Tuesday,Wednesday,Thursday,Friday"
+      - "ACTIVE_HOURS_START=08:00:00"
+      - "ACTIVE_HOURS_END=17:00:00"
+      - "SLEEP_SECONDS=5"
+      - "LOGLEVEL=WARNING"
     volumes:
       - type: bind
         source: /path/to/tokenstore
@@ -157,6 +124,7 @@ secrets:
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
+---
 ### **Statuses**
 
 - *Optional*
@@ -231,7 +199,9 @@ if webexStatus == const.Status.unknown or webexStatus in offStatus:
   # Fall through to Slack
   currentStatus = slackStatus
 
-if (currentStatus in availableStatus or currentStatus in offStatus) and (officeStatus not in offStatus or googleStatus not in offStatus):
+if (currentStatus in availableStatus or currentStatus in offStatus) 
+  and (officeStatus not in offStatus or googleStatus not in offStatus):
+
   # Office 365 currently takes precedence over Google
   if (officeStatus != const.Status.unknown):
     currentStatus = officeStatus
@@ -253,6 +223,7 @@ elif currentStatus in offStatus:
   # Turn off the light
 ```
 
+---
 ### **Colors**
 
 - *Optional*
@@ -276,6 +247,7 @@ elif currentStatus in offStatus:
 
 - Default value: `red`
 
+---
 ### **Tuya**
 
 #### `TUYA_DEVICE`
@@ -308,6 +280,7 @@ Example `TUYA_DEVICE` value:
 
 Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100% (though Tuya lights typically don't accept a brightness value below `32`). Status-Light defaults to 50% brightness, `128`.
 
+---
 ### **Webex**
 
 #### `WEBEX_PERSONID`
@@ -331,6 +304,7 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
 
 **Docker Secrets:** These variables can instead be specified in secrets files, using the `WEBEX_PERSONID_FILE` and `WEBEX_BOTID_FILE` variables.
 
+---
 ### **Slack**
 
 #### `SLACK_USER_ID`
@@ -358,6 +332,7 @@ To retrieve your `SLACK_BOT_TOKEN`, see below:
 
 **Note:** The `SLACK_BOT_TOKEN` is Workspace-specific, meaning you will need to create a new bot for each Slack Workspace.
 
+---
 ### **Office 365**
 
 #### `O365_APPID`
@@ -382,6 +357,7 @@ Defines a writable location on disk where the Office 365 tokens are stored. This
 
 **Note:** This path is directory only. The python-o365 module will expect to persist a file within the directory supplied.
 
+---
 ### **Google**
 
 #### `GOOGLE_CREDENTIALSTORE`
@@ -411,6 +387,39 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 
 **Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
 
+---
+### **Active Times**
+If you prefer to leave Status-Light running all the time (e.g. headless in a Docker container), you may wish to disable status polling during off hours.
+
+**Note:** This implementation is fairly basic, assuming that active hours are identical on all active days, and that the active hours will start and end on the same day. This may preclude, for example, configuring active hours that span days (e.g. overnights) or differing schedules on specific days.
+
+#### `ACTIVE_DAYS`
+
+A list of days that Status-Light will be actively polling status sources.
+
+- *Optional*
+- Acceptable values:
+  - `Monday`
+  - `Tuesday`
+  - `Wednesday`
+  - `Thursday`
+  - `Friday`
+  - `Saturday`
+  - `Sunday`
+- Default value: `Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday`
+
+#### `ACTIVE_HOURS_START`
+
+#### `ACTIVE_HOURS_END`
+
+A time, in 24-hour format, signifying the start and end of the active hours on any active day.
+
+- *Optional*
+- Default values:
+  - `ACTIVE_HOURS_START`: `00:00:00`
+  - `ACTIVE_HOURS_END`: `23:59:59`
+
+---
 ### `SLEEP_SECONDS`
 
 - *Optional*
@@ -419,6 +428,7 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 
 Set the number of seconds between status checks.
 
+---
 ### `LOGLEVEL`
 
 - *Optional*

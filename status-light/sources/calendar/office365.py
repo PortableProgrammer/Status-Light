@@ -51,7 +51,7 @@ class OfficeAPI:
 
             return enum.Status[availability_view.replace(' ','').lower()]
         except (SystemExit, KeyboardInterrupt):
-            return enum.Status.unknown
+            return enum.Status.UNKNOWN
         except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception during OfficeAPI.getCurrentStatus: %s', ex)
-            return enum.Status.unknown
+            return enum.Status.UNKNOWN
