@@ -252,7 +252,7 @@ class Environment:
             return secret
         else:
             try:
-                with open(file, encoding='platform') as file:
+                with open(file) as file: # pylint: disable=unspecified-encoding
                     secret = file.read()
                     if strip:
                         secret = secret.strip()
