@@ -76,9 +76,9 @@ def parse_color(color_string, default):
         if not re.match('^[0-9A-Fa-f]{6}$', color_string) is None:
             temp_color = color_string
         else:
-            # _parse_enum returns a list, so grab the first, and, hopefully
-            # only, element
-            temp_color = parse_enum(color_string, enum.Color, "parse_color", default)[0]
+            # _parse_enum returns a list of enums, so grab the first, and, hopefully
+            # only, element and then get the value (the actual hex color value)
+            temp_color = parse_enum(color_string, enum.Color, "parse_color", default)[0].value
     except BaseException as ex: # pylint: disable=broad-except
         logger.warning('Exception encountered during _parseColor: %s, using default: %s',
             ex, default)

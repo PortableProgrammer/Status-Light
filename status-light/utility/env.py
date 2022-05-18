@@ -170,6 +170,6 @@ class Environment:
     def get_log_level(self):
         # _parse_enum returns a list, so grab the first, and, hopefully
         # only, element
-        self.log_level = util.parse_enum(os.environ.get('LOGLEVEL'),
+        self.log_level = util.parse_enum(os.environ.get('LOGLEVEL', None),
             enum.LogLevel, 'LOGLEVEL', self.log_level)[0]
         return self.log_level is not None
