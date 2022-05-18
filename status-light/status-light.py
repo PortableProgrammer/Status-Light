@@ -21,9 +21,9 @@ from sources.calendar import office365
 from sources.calendar import google
 from targets import tuya
 from utility import env
-from utility import const
+from utility import enum
 
-currentStatus = const.Status.unknown
+currentStatus = enum.Status.unknown
 lastStatus = currentStatus
 shouldContinue = True
 
@@ -77,7 +77,7 @@ logger.setLevel(localEnv.log_level)
 
 # Depending on the selected sources, get the environment
 webex_api = None
-if const.StatusSource.webex in localEnv.selected_sources:
+if enum.StatusSource.webex in localEnv.selected_sources:
     if localEnv.get_webex():
         logger.info('Requested Webex')
         webex_api = webex.WebexAPI()
@@ -87,7 +87,7 @@ if const.StatusSource.webex in localEnv.selected_sources:
         sys.exit(1)
 
 slack_api = None
-if const.StatusSource.slack in localEnv.selected_sources:
+if enum.StatusSource.slack in localEnv.selected_sources:
     if localEnv.get_slack():
         logger.info('Requested Slack,')
         slack_api = slack.SlackAPI()
@@ -98,7 +98,7 @@ if const.StatusSource.slack in localEnv.selected_sources:
         sys.exit(1)
 
 office_api = None
-if const.StatusSource.office365 in localEnv.selected_sources:
+if enum.StatusSource.office365 in localEnv.selected_sources:
     if localEnv.get_office():
         logger.info('Requested Office 365')
         office_api = office365.OfficeAPI()
@@ -112,7 +112,7 @@ if const.StatusSource.office365 in localEnv.selected_sources:
 
 # 47 - Add Google support
 google_api = None
-if const.StatusSource.google in localEnv.selected_sources:
+if enum.StatusSource.google in localEnv.selected_sources:
     if localEnv.get_google():
         logger.info('Requested Google')
         google_api = google.GoogleCalendarAPI()
@@ -133,25 +133,25 @@ logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 
 while shouldContinue:
     try:
-        webexStatus = const.Status.unknown
-        slackStatus = const.Status.unknown
-        officeStatus = const.Status.unknown
-        googleStatus = const.Status.unknown
+        webexStatus = enum.Status.unknown
+        slackStatus = enum.Status.unknown
+        officeStatus = enum.Status.unknown
+        googleStatus = enum.Status.unknown
 
         # Webex Status
-        if const.StatusSource.webex in localEnv.selected_sources:
+        if enum.StatusSource.webex in localEnv.selected_sources:
             webexStatus = webex_api.get_person_status(localEnv.webex_person_id)
 
         # Slack Status
-        if const.StatusSource.slack in localEnv.selected_sources:
+        if enum.StatusSource.slack in localEnv.selected_sources:
             slackStatus = slack_api.get_user_presence()
 
         # O365 Status (based on calendar)
-        if const.StatusSource.office365 in localEnv.selected_sources:
+        if enum.StatusSource.office365 in localEnv.selected_sources:
             officeStatus = office_api.get_current_status()
 
         # Google Status (based on calendar)
-        if const.StatusSource.google in localEnv.selected_sources:
+        if enum.StatusSource.google in localEnv.selected_sources:
             googleStatus = google_api.get_current_status()
 
         # TODO: Now that we have more than one calendar-based status source,
@@ -162,7 +162,7 @@ while shouldContinue:
         # Collaboration status always wins except in specific scenarios
         # Webex currently takes precendence over Slack
         currentStatus = webexStatus
-        if webexStatus == const.Status.unknown or webexStatus in localEnv.off_status:
+        if webexStatus == enum.Status.unknown or webexStatus in localEnv.off_status:
             # Fall through to Slack
             currentStatus = slackStatus
 
@@ -172,7 +172,7 @@ while shouldContinue:
 
             logger.debug('Using calendar-based status')
             # Office should take precedence over Google for now
-            if officeStatus != const.Status.unknown:
+            if officeStatus != enum.Status.unknown:
                 logger.debug('Using officeStatus: %s', officeStatus)
                 currentStatus = officeStatus
             else:
