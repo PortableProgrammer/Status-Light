@@ -1,3 +1,10 @@
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Utility Functions
+"""
+
 # Standard imports
 import logging
 
@@ -12,7 +19,7 @@ def try_parse_int(value, base = 10, default = None):
     """
     try:
         return int(value, base)
-    except BaseException as ex:
+    except BaseException as ex: # pylint: disable=broad-except
         logger.warning('Exception encountered during try_parse_int: %s, using default: %s',
             ex, default)
         return default

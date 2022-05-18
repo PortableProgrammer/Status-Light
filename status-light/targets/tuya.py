@@ -1,4 +1,9 @@
-# https://github.com/portableprogrammer/Status-Light/
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Tuya Target
+"""
 
 # Standard imports
 import time
@@ -8,7 +13,7 @@ import logging
 import tuyaface
 
 # Project imports
-from utility import const
+from utility import enum
 from utility import env
 
 logger = logging.getLogger(__name__)
@@ -31,8 +36,8 @@ class TuyaLight:
                 status = tuyaface.set_status(self.device, {index: value})
             except (SystemExit, KeyboardInterrupt):
                 count = retry # Break the loop
-            except BaseException as exc:
-                logger.warning('Exception during setSingleState: %s', exc)
+            except BaseException as ex: # pylint: disable=broad-except
+                logger.warning('Exception during setSingleState: %s', ex)
                 count = count + 1
                 time.sleep(1)
         return status
@@ -63,7 +68,7 @@ class TuyaLight:
     def get_status(self):
         return tuyaface.status(self.device)
 
-    def transition_status(self, status: const.Status, environment: env.Environment):
+    def transition_status(self, status: enum.Status, environment: env.Environment):
         #43: Coalesce the statuses and only execute setState once.
         # This will still allow a single status to be in more than one list,
         # but will not cause the light to rapidly switch between states.
