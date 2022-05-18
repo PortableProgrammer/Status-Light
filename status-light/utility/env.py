@@ -1,10 +1,17 @@
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Environment Variable Management
+"""
+
 # Standard imports
 import os
 import re
 import logging
 
 # Project imports
-from utility import const
+from utility import enum
 from utility import util
 
 logger = logging.getLogger(__name__)
@@ -21,7 +28,7 @@ class Environment:
     webex_bot_id = None
 
     # 48 - Add Slack Support
-    slack_user_email = None
+    slack_user_id = None
     slack_bot_token = None
 
     office_app_id = None
@@ -34,16 +41,16 @@ class Environment:
     google_token_store = '~'
 
     #38 - Working Elsewhere isn't handled
-    off_status = [const.Status.inactive, const.Status.outofoffice,
-        const.Status.workingelsewhere, const.Status.unknown, const.Status.free]
-    available_status = [const.Status.active]
-    scheduled_status = [const.Status.busy, const.Status.tentative]
-    busy_status = [const.Status.call, const.Status.donotdisturb,
-        const.Status.meeting, const.Status.presenting, const.Status.pending]
+    off_status = [enum.Status.inactive, enum.Status.outofoffice,
+        enum.Status.workingelsewhere, enum.Status.unknown, enum.Status.free]
+    available_status = [enum.Status.active]
+    scheduled_status = [enum.Status.busy, enum.Status.tentative]
+    busy_status = [enum.Status.call, enum.Status.donotdisturb,
+        enum.Status.meeting, enum.Status.presenting, enum.Status.pending]
 
-    available_color = const.Color.green.value
-    scheduled_color = const.Color.orange.value
-    busy_color = const.Color.red.value
+    available_color = enum.Color.green.value
+    scheduled_color = enum.Color.orange.value
+    busy_color = enum.Color.red.value
 
     #22 - Make sleep timeout configurable
     sleep_seconds = 5
@@ -151,9 +158,9 @@ class Environment:
             return temp_status
 
         try:
-            temp_status = list(const.StatusSource[source.lower().strip()]
+            temp_status = list(enum.StatusSource[source.lower().strip()]
                 for source in source_string.split(','))
-        except BaseException as ex:
+        except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception encountered during _parseSource: %s', ex)
             temp_status = None
         return temp_status
@@ -169,10 +176,10 @@ class Environment:
             if not re.match('^[0-9A-Fa-f]{6}$', color_string) is None:
                 temp_color = color_string
             else:
-                temp_color = const.Color[color_string.lower().strip()].value
-                if temp_color == const.Color.unknown.value:
+                temp_color = enum.Color[color_string.lower().strip()].value
+                if temp_color == enum.Color.unknown.value:
                     temp_color = default
-        except BaseException as ex:
+        except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception encountered during _parseColor: %s, using default: %s',
                 ex, default)
             temp_color = default
@@ -184,9 +191,9 @@ class Environment:
             return temp_status
 
         try:
-            temp_status = list(const.Status[status.lower().strip()]
+            temp_status = list(enum.Status[status.lower().strip()]
                 for status in status_string.split(','))
-        except BaseException as ex:
+        except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception encountered during _parseStatus: %s, using default: %s',
                 ex, list(status.name for status in default))
             temp_status = default
@@ -206,7 +213,7 @@ class Environment:
                 temp_log = log_string.upper().strip()
             else:
                 temp_log = default
-        except BaseException as ex:
+        except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception encountered during _parseLogLevel: %s, using default: %s',
                 ex, default)
             temp_log = default
@@ -245,7 +252,7 @@ class Environment:
             else:
                 # Strip the whitespace
                 value = value.strip()
-        except BaseException as ex:
+        except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception encountered during _getEnvOrSecret for %s: %s', variable, ex)
             value = default
 
@@ -267,7 +274,7 @@ class Environment:
                     secret = file.read()
                     if strip:
                         secret = secret.strip()
-            except BaseException as ex:
+            except BaseException as ex: # pylint: disable=broad-except
                 logger.warning('Exception encountered during _readFile: %s', ex)
 
         return secret

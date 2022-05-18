@@ -1,4 +1,9 @@
-# https://github.com/portableprogrammer/Status-Light/
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Main Application Entry Point
+"""
 
 # Standard imports
 import sys
@@ -34,6 +39,7 @@ print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Startup')
 # Since these are OS-level calls, we'll just ignore the argument issues
 # pylint: disable=unused-argument
 def receive_signal(signal_number, frame):
+    """Signals the endless while loop to exit, allowing a clean shutdown."""
     logger.warning('\nSignal received: %s', signal_number)
     # Since this controls the infinite while loop, it should stay
     # pylint: disable=global-statement
@@ -45,6 +51,8 @@ def receive_signal(signal_number, frame):
 # Since these are OS-level calls, we'll just ignore the argument issues
 # pylint: disable=unused-argument
 def receive_terminate(signal_number, frame):
+    """Immediately calls sys.exit() in response to a SIGTERM without explicitly
+    waiting for a clean shutdown."""
     logger.warning('\nSIGTERM received, terminating immediately')
     sys.exit(0)
 
@@ -149,7 +157,8 @@ while shouldContinue:
         # TODO: Now that we have more than one calendar-based status source,
         # build a real precedence module for these
         # Compare statii and pick a winner
-        logger.debug('Webex: %s | Slack: %s | Office: %s | Google: %s', webexStatus, slackStatus, officeStatus, googleStatus)
+        logger.debug('Webex: %s | Slack: %s | Office: %s | Google: %s',
+            webexStatus, slackStatus, officeStatus, googleStatus)
         # Collaboration status always wins except in specific scenarios
         # Webex currently takes precendence over Slack
         currentStatus = webexStatus
@@ -183,12 +192,12 @@ while shouldContinue:
 
         # Sleep for a few seconds
         time.sleep(localEnv.sleep_seconds)
-    except (SystemExit, KeyboardInterrupt) as e:
-        logger.info('%s received; shutting down...', e.__class__.__name__)
+    except (SystemExit, KeyboardInterrupt) as ex:
+        logger.info('%s received; shutting down...', ex.__class__.__name__)
         shouldContinue = False
-    except BaseException as e:
-        logger.warning('Exception during main loop: %s', e)
-        logger.debug(e)
+    except BaseException as ex: # pylint: disable=broad-except
+        logger.warning('Exception during main loop: %s', ex)
+        logger.debug(ex)
 
 print()
 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Shutdown')

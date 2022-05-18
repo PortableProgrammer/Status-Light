@@ -1,3 +1,11 @@
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Enumeration Definition
+"""
+
+# Standard imports
 import enum
 
 class Status(enum.Enum):
@@ -44,5 +52,5 @@ class StatusSource(enum.Enum):
     # 48 - Add Slack suport
     slack = 4
 
-    def _missing(self, value): # pylint: disable=arguments-differ
+    def _missing(self, value): # pylint: disable=unused-argument
         return self.unknown

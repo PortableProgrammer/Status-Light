@@ -1,4 +1,10 @@
-"""Handles Google Calendar Free/Busy"""
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Google Calendar Source
+"""
+
 #47: Add Google Calendar support
 # https://github.com/portableprogrammer/Status-Light/
 
@@ -14,9 +20,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-
 # Project imports
-from utility import const
+from utility import enum
 
 logger = logging.getLogger(__name__)
 
@@ -92,12 +97,12 @@ class GoogleCalendarAPI:
             freebusy = freebusy_result['calendars']['primary']['busy']
             if freebusy and len(freebusy) > 0:
                 logger.debug('Found Busy Result: %s', freebusy)
-                return const.Status.busy
+                return enum.Status.busy
             else:
                 logger.debug('No Free/Busy Result, assuming Free')
-                return const.Status.free
+                return enum.Status.free
         except (SystemExit, KeyboardInterrupt):
-            return const.Status.unknown
+            return enum.Status.unknown
         except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception during GoogleAPI.getCurrentStatus: %s', ex)
-            return const.Status.unknown
+            return enum.Status.unknown

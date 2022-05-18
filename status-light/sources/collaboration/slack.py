@@ -1,4 +1,9 @@
-# https://github.com/portableprogrammer/Status-Light/
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Slack Source
+"""
 
 # Standard imports
 import logging
@@ -8,7 +13,7 @@ from slack_sdk.web import WebClient
 from slack_sdk.errors import SlackApiError
 
 # Project imports
-from utility import const
+from utility import enum
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +45,7 @@ class SlackAPI:
         client = self.get_client()
         response = None
         user_info = None
-        return_value = const.Status.unknown
+        return_value = enum.Status.unknown
         try:
             # If we want to check for DnD or Huddle (busy or call),
             if check_dnd or check_huddle:
@@ -49,21 +54,21 @@ class SlackAPI:
                 if user_info['profile']['status_emoji'] == ':headphones:' \
                     and user_info['profile']['status_text'].startsWith('In a huddle'):
 
-                    return_value = const.Status.meeting
+                    return_value = enum.Status.meeting
 
-            if return_value is const.Status.unknown:
+            if return_value is enum.Status.unknown:
                 response = client.users_getPresence(user=self.user_id)
                 match response.data['presence']: # pylint: disable=no-member
                     case "active":
-                        return_value = const.Status.active
+                        return_value = enum.Status.active
                     case "away":
-                        return_value = const.Status.inactive
+                        return_value = enum.Status.inactive
             return return_value
         except (SystemExit, KeyboardInterrupt):
             pass
         except SlackApiError as ex:
             logger.warning('Exception during get_user_info: %s', ex.response['error'])
-            return const.Status.unknown
+            return enum.Status.unknown
         except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception during get_user_presence: %s', ex)
-            return const.Status.unknown
+            return enum.Status.unknown

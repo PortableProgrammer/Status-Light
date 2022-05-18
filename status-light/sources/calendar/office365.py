@@ -1,4 +1,9 @@
-# https://github.com/portableprogrammer/Status-Light/
+"""Status-Light
+(c) 2020-2022 Nick Warner
+https://github.com/portableprogrammer/Status-Light/
+
+Office 365 Source
+"""
 
 # Standard imports
 from datetime import datetime
@@ -10,7 +15,7 @@ from O365 import Account
 from O365 import FileSystemTokenBackend
 
 # Project imports
-from utility import const
+from utility import enum
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +49,9 @@ class OfficeAPI:
             availability_view = availability[0]["availabilityView"][0]
             logger.debug('Got availabilityView: %s', availability_view)
 
-            return const.Status[availability_view.replace(' ','').lower()]
+            return enum.Status[availability_view.replace(' ','').lower()]
         except (SystemExit, KeyboardInterrupt):
-            return const.Status.unknown
+            return enum.Status.unknown
         except BaseException as ex: # pylint: disable=broad-except
             logger.warning('Exception during OfficeAPI.getCurrentStatus: %s', ex)
-            return const.Status.unknown
+            return enum.Status.unknown
