@@ -20,6 +20,10 @@ class Environment:
     webex_person_id = None
     webex_bot_id = None
 
+    # 48 - Add Slack Support
+    slack_user_email = None
+    slack_bot_token = None
+
     office_app_id = None
     office_app_secret = None
     office_token_store = '~'
@@ -85,6 +89,13 @@ class Environment:
         # 30: This variable could contain secrets
         self.webex_bot_id = self._get_env_or_secret('WEBEX_BOTID', None)
         return (None not in [self.webex_person_id, self.webex_bot_id])
+
+    def get_slack(self):
+        # 30: This variable could contain secrets
+        self.slack_user_id = self._get_env_or_secret('SLACK_USER_ID', None)
+        # 30: This variable could contain secrets
+        self.slack_bot_token = self._get_env_or_secret('SLACK_BOT_TOKEN', None)
+        return (None not in [self.slack_user_id, self.slack_bot_token])
 
     def get_office(self):
         # 30: This variable could contain secrets

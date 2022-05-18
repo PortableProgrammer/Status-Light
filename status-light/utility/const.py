@@ -3,7 +3,7 @@ import enum
 class Status(enum.Enum):
     unknown = 0
 
-    # Collaboration (Webex)
+    # Collaboration (Webex, Slack)
     active = 1
     call = 2
     donotdisturb = 3
@@ -19,7 +19,7 @@ class Status(enum.Enum):
     outofoffice = 11
     workingelsewhere = 12
 
-    def _missing_(self, value):
+    def _missing_(self, value): # pylint: disable=arguments-differ
         return self.unknown
 
 class Color(enum.Enum):
@@ -31,7 +31,7 @@ class Color(enum.Enum):
     green = '00ff00'
     blue = '0000f'
 
-    def _missing_(self, value):
+    def _missing_(self, value): # pylint: disable=arguments-differ
         return self.unknown
 
 class StatusSource(enum.Enum):
@@ -39,8 +39,10 @@ class StatusSource(enum.Enum):
 
     webex = 1
     office365 = 2
-    #47: Add Google support
+    # 47 - Add Google support
     google = 3
+    # 48 - Add Slack suport
+    slack = 4
 
-    def _missing(self, value):
+    def _missing(self, value): # pylint: disable=arguments-differ
         return self.unknown

@@ -145,6 +145,7 @@ secrets:
 - *Optional*
 - Available values:
   - `webex`
+  - `slack`
   - `office365`
   - `google`
 - Default value: `webex,office365`
@@ -163,6 +164,11 @@ If specificed, requires at least one of the available options. This will control
     - `meeting`
     - `pending`
     - `presenting`
+  - Slack
+    - `active`
+    - `inactive`
+    - `donotdisturb`
+    - `meeting`
   - Office 365
     - `free`
     - `tentative`
@@ -176,19 +182,19 @@ If specificed, requires at least one of the available options. This will control
 #### `AVAILABLE_STATUS`
 
 - Default value: `active`
-- By default, denotes that there is no ongoing Webex call or meeting, and no calendar meetings scheduled within the next `5` minutes.
+- By default, denotes that there is no ongoing collaboration call or meeting, and no calendar meetings scheduled within the next `5` minutes.
   - This is the default *not busy* state. See [`OFF_STATUS`](#off_status) for an explanation of why the calendar `free` status is not included in this list by default, and why you may want to change that.
 
 #### `SCHEDULED_STATUS`
 
 - Default value: `busy,tentative`
-- By default, denotes that there is no ongoing Webex call or meeting, but a calendar meeting, that was either accepted or tentatively accepted, is scheduled within the next `5` minutes.
+- By default, denotes that there is no ongoing collaboration call or meeting, but a calendar meeting, that was either accepted or tentatively accepted, is scheduled within the next `5` minutes.
   - This is the default *about to be busy* state.
 
 #### `BUSY_STATUS`
 
 - Default value: `call,donotdisturb,meeting,presenting,pending`
-- By default, denotes that there is an ongoing Webex call or meeting, or (in the case of `donotdisturb` or `presenting`) some other reason why the user could be considered busy.
+- By default, denotes that there is an ongoing collaboration call or meeting, or (in the case of `donotdisturb` or `presenting`) some other reason why the user could be considered busy.
   - This is the default *busy* state.
 - If the Webex "Show when in a calendar meeting" option is selected, and `webex` is present in [`SOURCES`](#sources), Webex will return a `meeting` status for any connected calendars.
 
@@ -202,7 +208,7 @@ If specificed, requires at least one of the available options. This will control
 - In the case of `free`, there are a few reasons why it's in `OFF_STATUS` by default.
   - Typically, if the user is asking for both collaboration and calendar statuses, the user will be `active` (from collaboration) and `free` (from calendar) simultaneously, so `active` will always win.
   - Status-Light makes a  determination of `free`/`busy`/`tentative` by checking the user's availability within the next `5` minutes. There is typically no 'off-hours' status in calendaring applications, which means, at the end of the working day, the user is technically `free`. In that instance, the light would be on during off hours, showing the selected [`AVAIALBLE_COLOR`](#available_color). Again, this is a personal preference; I don't want the light on while I'm not at work, and I am using Webex to handle [`AVAILABLE_STATUS`](#available_status).
-  - In the case that `webex` is not present in [`SOURCES`](#sources), it is recommended to move `free` to [`AVAILABLE_STATUS`](#available_status), but the caveat above will apply in that scenario: the light may stay on all the time.
+  - In the case that no collaboration sources are present in [`SOURCES`](#sources), it is recommended to move `free` to [`AVAILABLE_STATUS`](#available_status), but the caveat above will apply in that scenario: the light may stay on all the time.
 
 **Note 1:** Status-Light makes no attempt to handle invalid values in a list. In the case of an error, Status-Light will simply revert to the default value for that list.
 
@@ -210,12 +216,17 @@ If specificed, requires at least one of the available options. This will control
 
 #### **Status Precedence**
 
-Since the "most-busy" status should win when selecting a color, typically the Webex status will take precedence over calendars. For example, if your calendar status is `busy` (you're scheduled to be in a meeting), and your collaboration status is `meeting` (you're actively in the meeting), the collaboration status would take precedence, given the default values listed above. Generally, precedence is [`BUSY_STATUS`](#busy_status), then [`SCHEDULED_STATUS`](#scheduled_status), followed by [`AVAILABLE_STATUS`](#available_status), and finally [`OFF_STATUS`](#off_status). In more specific terms, the way Status-Light handles precedence is:
+Since the "most-busy" status should win when selecting a color, typically the collaboration status will take precedence over calendars. For example, if your calendar status is `busy` (you're scheduled to be in a meeting), and your collaboration status is `meeting` (you're actively in the meeting), the collaboration status would take precedence, given the default values listed above. Generally, precedence is [`BUSY_STATUS`](#busy_status), then [`SCHEDULED_STATUS`](#scheduled_status), followed by [`AVAILABLE_STATUS`](#available_status), and finally [`OFF_STATUS`](#off_status). In more specific terms, the way Status-Light handles precedence is:
 
 ``` python
-# Webex status always wins except in specific scenarios
+# Collaboration status always wins except in specific scenarios
+# Webex currently takes precendence over Slack
 currentStatus = webexStatus
-if (webexStatus in availableStatus or webexStatus in offStatus) and (officeStatus not in offStatus or googleStatus not in offStatus):
+if webexStatus == const.Status.unknown or webexStatus in offStatus:
+  # Fall through to Slack
+  currentStatus = slackStatus
+
+if (currentStatus in availableStatus or currentStatus in offStatus) and (officeStatus not in offStatus or googleStatus not in offStatus):
   # Office 365 currently takes precedence over Google
   if (officeStatus != const.Status.unknown):
     currentStatus = officeStatus
@@ -314,6 +325,33 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
   - Copy the value id from the response shown
 
 **Docker Secrets:** These variables can instead be specified in secrets files, using the `WEBEX_PERSONID_FILE` and `WEBEX_BOTID_FILE` variables.
+
+### **Slack**
+
+#### `SLACK_USER_ID`
+
+- *Required if `slack` is present in [`SOURCES`](#sources)*
+- The ID of the user presence to monitor.
+  - Retrieve by navigating to the user's profile, then selecting `More` and `Copy member ID`
+
+#### `SLACK_BOT_TOKEN`
+
+- *Required if `slack` is present in [`SOURCES`](#sources)*
+
+To retrieve your `SLACK_BOT_TOKEN`, see below: 
+
+- Easy: Slack App Tutorial
+  - <https://github.com/slackapi/python-slack-sdk/tree/main/tutorial>
+  - Follow Step 1 and assign the following Scopes to the Bot Token
+    - `users:read`
+- Advanced: Create a Slack App by hand
+  - <https://developer.webex.com/my-apps/new/bot>
+  - Assign the following Scopes to the Bot Token
+    - `users:read`
+
+**Docker Secrets:** This variable can instead be specified in a secrets file, using the `SLACK_BOT_TOKEN_FILE` variable.
+
+**Note:** The `SLACK_BOT_TOKEN` is Workspace-specific, meaning you will need to create a new bot for each Slack Workspace.
 
 ### **Office 365**
 
