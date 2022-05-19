@@ -76,25 +76,27 @@ def parse_color(color_string, default):
         if not re.match('^[0-9A-Fa-f]{6}$', color_string) is None:
             temp_color = color_string
         else:
-            # _parse_enum returns a list of enums, so grab the first, and, hopefully
-            # only, element and then get the value (the actual hex color value)
-            temp_color = parse_enum(color_string, enum.Color, "parse_color", default)[0].value
+            # _parse_enum returns an enum, get the value (the actual hex color value)
+            temp_color = parse_enum(color_string, enum.Color, "parse_color", default,
+                value_is_list=False).value
     except BaseException as ex: # pylint: disable=broad-except
         logger.warning('Exception encountered during _parseColor: %s, using default: %s',
             ex, default)
         temp_color = default
     return temp_color
 
-def parse_enum(value_string, value_enum:Enum, description, default):
-    """Given a string and an enumeration, attempts to parse the string into a list of
-    enums."""
+def parse_enum(value_string, value_enum:Enum, description, default, value_is_list:bool = True):
+    """Given a string and an enumeration, attempts to parse the string into enums."""
     temp_value = default
     if value_string in [None, '']:
         return temp_value
 
     try:
-        temp_value = list(value_enum[value.upper().strip()]
-            for value in value_string.split(','))
+        if value_is_list:
+            temp_value = list(value_enum[value.upper().strip()]
+                for value in value_string.split(','))
+        else:
+            temp_value = value_enum[value_string.upper().strip()]
     except BaseException as ex: # pylint: disable=broad-except
         logger.warning('Exception encountered during parse_enum for %s: %s', description, ex)
         temp_value = default

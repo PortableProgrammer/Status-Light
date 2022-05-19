@@ -62,9 +62,9 @@ if False in [localEnv.get_sources(), localEnv.get_tuya(), localEnv.get_colors(),
     sys.exit(1)
 
 # 23 - Make logging level configurable
-logger.info('Setting log level to %s', localEnv.log_level)
-print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Setting log level to', localEnv.log_level)
-logger.setLevel(localEnv.log_level)
+logger.info('Setting log level to %s', localEnv.log_level.name)
+print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Setting log level to', localEnv.log_level.name)
+logger.setLevel(localEnv.log_level.name)
 
 # Depending on the selected sources, get the environment
 webex_api = None
