@@ -30,6 +30,11 @@ class Environment:
     # 48 - Add Slack Support
     slack_user_id = None
     slack_bot_token = None
+    # 66 - Add Slack custom status support
+    slack_off_status = [':no_entry: Out of office',':airplane:']
+    slack_available_status = None
+    slack_scheduled_status = ':spiral_calendar_pad: In a meeting'
+    slack_busy_status = [':headphones: In a huddle',':slack_call:',':no_entry_sign: Do not disturb']
 
     office_app_id = None
     office_app_secret = None
@@ -108,6 +113,17 @@ class Environment:
         self.slack_user_id = util.get_env_or_secret('SLACK_USER_ID', None)
         # 30: This variable could contain secrets
         self.slack_bot_token = util.get_env_or_secret('SLACK_BOT_TOKEN', None)
+        # 66: Support Slack custom statuses
+        # NOTE: Since these are all optional, and at least one defaults to None,
+        # they should not be checked in the return statement
+        self.slack_available_status = util.parse_str_array(os.environ.get('SLACK_AVAILABLE_STATUS'),
+            default=self.slack_available_status)
+        self.slack_busy_status = util.parse_str_array(os.environ.get('SLACK_BUSY_STATUS'),
+            self.slack_busy_status)
+        self.slack_off_status = util.parse_str_array(os.environ.get('SLACK_OFF_STATUS'),
+            self.slack_off_status)
+        self.slack_scheduled_status = util.parse_str_array(os.environ.get('SLACK_SCHEDULED_STATUS'),
+            self.slack_scheduled_status)
         return (None not in [self.slack_user_id, self.slack_bot_token])
 
     def get_office(self):

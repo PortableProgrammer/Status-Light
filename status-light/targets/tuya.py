@@ -37,7 +37,7 @@ class TuyaLight:
             except (SystemExit, KeyboardInterrupt):
                 count = retry # Break the loop
             except BaseException as ex: # pylint: disable=broad-except
-                logger.warning('Exception during setSingleState: %s', ex)
+                logger.warning('Exception sending to Tuya device: %s', ex)
                 count = count + 1
                 time.sleep(1)
         return status
@@ -91,5 +91,5 @@ class TuyaLight:
         # In the case that we made it here without a valid state,
         # just turn the light off and warn about it
         else:
-            logger.warning('transition_status called with an invalid status: %s',status)
+            logger.warning('Called with an invalid status: %s',status)
             self.turn_off()

@@ -28,7 +28,8 @@ currentStatus = enum.Status.UNKNOWN
 lastStatus = currentStatus
 shouldContinue = True
 
-logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s: %(message)s',
+# 67 - Include function name in the basic logger format
+logging.basicConfig(format='%(asctime)s %(name)s.%(funcName)s %(levelname)s: %(message)s',
     datefmt='[%Y-%m-%d %H:%M:%S]', level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,8 @@ if False in [localEnv.get_sources(), localEnv.get_tuya(), localEnv.get_colors(),
 
 # 23 - Make logging level configurable
 logger.info('Setting log level to %s', localEnv.log_level.name)
-print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Setting log level to', localEnv.log_level.name)
+print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Setting log level to',
+    localEnv.log_level.name)
 logger.setLevel(localEnv.log_level.name)
 
 # Depending on the selected sources, get the environment
@@ -80,10 +82,19 @@ if enum.StatusSource.WEBEX in localEnv.selected_sources:
 slack_api = None
 if enum.StatusSource.SLACK in localEnv.selected_sources:
     if localEnv.get_slack():
-        logger.info('Requested Slack,')
+        logger.info('Requested Slack')
         slack_api = slack.SlackAPI()
         slack_api.user_id = localEnv.slack_user_id
         slack_api.bot_token= localEnv.slack_bot_token
+        # 66 - Support Slack custom statuses
+        slack_api.custom_available_status = localEnv.slack_available_status
+        slack_api.custom_available_status_map = localEnv.available_status[0]
+        slack_api.custom_busy_status = localEnv.slack_busy_status
+        slack_api.custom_busy_status_map = localEnv.busy_status[0]
+        slack_api.custom_off_status = localEnv.slack_off_status
+        slack_api.custom_off_status_map = localEnv.off_status[0]
+        slack_api.custom_scheduled_status = localEnv.slack_scheduled_status
+        slack_api.custom_scheduled_status_map = localEnv.scheduled_status[0]
     else:
         logger.warning('Requested Slack, but could not find all environment variables!')
         sys.exit(1)

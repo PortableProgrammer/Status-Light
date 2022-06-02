@@ -104,5 +104,5 @@ class GoogleCalendarAPI:
         except (SystemExit, KeyboardInterrupt):
             return enum.Status.UNKNOWN
         except BaseException as ex: # pylint: disable=broad-except
-            logger.warning('Exception during GoogleAPI.getCurrentStatus: %s', ex)
+            logger.warning('Exception while getting Google status: %s', ex)
             return enum.Status.UNKNOWN
