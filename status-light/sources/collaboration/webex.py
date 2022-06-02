@@ -26,5 +26,5 @@ class WebexAPI:
         except (SystemExit, KeyboardInterrupt):
             pass
         except BaseException as ex: # pylint: disable=broad-except
-            logger.warning('Exception during getPersonStatus: %s', ex)
+            logger.warning('Exception while getting Webex person status: %s', ex)
             return "unknown"

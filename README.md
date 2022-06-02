@@ -30,7 +30,7 @@ docker run -d \
   portableprogrammer/status-light:latest
 ```
 
-### Compose with all options
+### Compose with all default options
 
 ``` dockerfile
 version: '3.7'
@@ -58,6 +58,10 @@ services:
       - "GOOGLE_CREDENTIALSTORE=/data"
       - "SLACK_USER_ID=xxx"
       - "SLACK_BOT_TOKEN=xxx"
+      - "SLACK_CUSTOM_AVAILABLE_STATUS=''"
+      - "SLACK_CUSTOM_SCHEDULED_STATUS=':spiral_calendar_pad: In a meeting'"
+      - "SLACK_CUSTOM_BUSY_STATUS=':headphones: In a huddle',':slack_call:',':no_entry_sign: Do not disturb'"
+      - "SLACK_CUSTOM_OFF_STATUS=':no_entry: Out of office',':airplane:'"
       - "ACTIVE_DAYS=Monday,Tuesday,Wednesday,Thursday,Friday"
       - "ACTIVE_HOURS_START=08:00:00"
       - "ACTIVE_HOURS_END=17:00:00"
@@ -140,8 +144,6 @@ If specificed, requires at least one of the available options. This will control
   - Slack
     - `active`
     - `inactive`
-    - `donotdisturb`
-    - `meeting`
   - Office 365
     - `free`
     - `tentative`
@@ -224,6 +226,48 @@ elif currentStatus in offStatus:
 ```
 
 ---
+
+### **Slack Custom Statuses**
+
+While Slack only offers the `active` and `inactive` presence flags, it also offers the ability to set custom emoji and text statuses. By default, Slack uses several of these to indicate a more granular status, for example, `:slack_call:` or `:spiral_calendar_pad: In a meeting`. Status-Light can read ths custom emoji and text to infer a more specific status than `active` or `inactive`. For example, you may be `active` in Slack, but also in a Slack Call (`:slack_call:`) or a Slack Huddle (`:headphones: In a huddle`). In this instance, Status-Light can interpret the custom status message as `CALL`, and set the appropriate color.
+
+These options accept a list of strings that should match the beginning of the Slack custom status.
+Take the following scenario:
+```python
+SLACK_BUSY_STATUS = [':headphones: In a huddle', ':no_entry_sign: Do not disturb']
+BUSY_STATUS = [CALL, DONOTDISTURB, MEETING, PRESENTING, PENDING]
+AVAILABLE_STATUS = ACTIVE
+slack.Presence = ACTIVE
+slack.CustomStatus = ':no_entry_sign: Do not disturb, I need to finish project X today!'
+```
+In the example above, the Slack custom status would match, and therefore take precedence over the Slack presence, causing Status-Light to treat Slack as `BUSY` instead of `AVAILABLE`.
+
+#### `SLACK_CUSTOM_AVAILABLE_STATUS`
+- *Optional*
+- Default value: `''`
+- Slack's `active` presence lines up nicely with the default [`AVAILABLE_STATUS`](#availablestatus), so there is no default custom override for this option.
+
+#### `SLACK_CUSTOM_SCHEDULED_STATUS`
+- *Optional*
+- Default value: `':spiral_calendar_pad: In a meeting'`
+- If you have a calendaring source configured in Slack but not in Status-Light, this default [`SCHEDULED_STATUS`](#scheduledstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
+
+#### `SLACK_CUSTOM_BUSY_STATUS`
+- *Optional*
+- Default value: `':headphones: In a huddle',':slack_call:',':no_entry_sign: Do not disturb'`
+- This custom status allows Status-Light to recognize Slack A/V collaboration modes, like [Huddles](https://slack.com/help/articles/4402059015315-Use-huddles-in-Slack) and [Calls](https://slack.com/help/articles/216771908-Make-calls-in-Slack).
+
+**Note 1:** For the default Call and Huddle custom statuses to work, you must have selected `Set my status to...` for Calls and Huddles in the Slack preferences.
+
+**Note 2:** Slack, by default, will not automatically change your custom status when you join a Call or Huddle, if you already have one set. In this instance, Status-Light will react to your existing custom status and other Source statuses.
+
+#### `SLACK_CUSTOM_OFF_STATUS`
+- *Optional*
+- Default value: `':no_entry: Out of office',':airplane:'`
+- If you have a calendaring source configured in Slack but not in Status-Light, this default [`OFF_STATUS`](#offstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
+
+---
+
 ### **Colors**
 
 - *Optional*

@@ -39,7 +39,7 @@ def try_parse_datetime(value:str, format = "%H:%M:%S", default = None):
     try:
         return datetime.strptime(value, format)
     except BaseException as ex: # pylint: disable=broad-except
-        logger.warning('Exception encountered during try_parse_time: %s, using default: %s',
+        logger.warning('Exception while parsing datetime: %s, using default: %s',
             ex, default)
         return default
 
@@ -60,7 +60,7 @@ def is_active_hours(active_days:list(enum.Weekday), active_hours_start:time,
         # Otherwise, we're within an active period
         return True
     except BaseException as ex: # pylint: disable=broad-except
-        logger.warning('Exception encountered during try_parse_time: %s', ex)
+        logger.warning('Exception while checking for active hours: %s', ex)
         return False
 
 def parse_color(color_string, default):
@@ -80,7 +80,7 @@ def parse_color(color_string, default):
             temp_color = parse_enum(color_string, enum.Color, "parse_color", default,
                 value_is_list=False).value
     except BaseException as ex: # pylint: disable=broad-except
-        logger.warning('Exception encountered during _parseColor: %s, using default: %s',
+        logger.warning('Exception while parsing color: %s, using default: %s',
             ex, default)
         temp_color = default
     return temp_color
@@ -98,7 +98,25 @@ def parse_enum(value_string, value_enum:Enum, description, default, value_is_lis
         else:
             temp_value = value_enum[value_string.upper().strip()]
     except BaseException as ex: # pylint: disable=broad-except
-        logger.warning('Exception encountered during parse_enum for %s: %s', description, ex)
+        logger.warning('Exception encountered for %s: %s', description, ex)
+        temp_value = default
+    return temp_value
+
+# 66 - Support Slack custom statuses
+def parse_str_array(value_string, default, delimiter:str = ','):
+    """Given a string containing an array of strings, attempts to parse the string into an array"""
+    temp_value = default
+    if value_string in [None, '']:
+        value_string = temp_value
+
+    try:
+        # Ensure that we return a true list, since the incoming string might have a single element only.
+        if not isinstance(value_string, list):
+            temp_value = []
+            for value in value_string.split(delimiter):
+                temp_value.append(value)
+    except BaseException as ex: # pylint: disable=broad-except
+        logger.warning('Exception while parsing a string array: %s', ex)
         temp_value = default
     return temp_value
 
@@ -135,7 +153,7 @@ def get_env_or_secret(variable, default, treat_empty_as_none: bool = True):
             # Strip the whitespace
             value = value.strip()
     except BaseException as ex: # pylint: disable=broad-except
-        logger.warning('Exception encountered during _getEnvOrSecret for %s: %s', variable, ex)
+        logger.warning('Exception encountered getting value for %s: %s', variable, ex)
         value = default
 
     # Finally, if the value is nonexistent or empty, just return the default
@@ -157,6 +175,6 @@ def _read_file(file, strip: bool = True):
                 if strip:
                     secret = secret.strip()
         except BaseException as ex: # pylint: disable=broad-except
-            logger.warning('Exception encountered during _readFile: %s', ex)
+            logger.warning('Exception encountered reading file: %s', ex)
 
     return secret
