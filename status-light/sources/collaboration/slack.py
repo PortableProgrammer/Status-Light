@@ -87,16 +87,16 @@ class SlackAPI:
 
             # For each of the Slack custom statuses, check them in reverse precedence order
             # Off, Available, Scheduled, Busy
-            if custom_status.startswith(tuple(self.custom_off_status)):
+            if self.custom_off_status and custom_status.startswith(tuple(self.custom_off_status)):
                 return_value = self.custom_off_status_map
 
-            if custom_status.startswith(tuple(self.custom_available_status)):
+            if self.custom_available_status and custom_status.startswith(tuple(self.custom_available_status)):
                 return_value = self.custom_available_status_map
 
-            if custom_status.startswith(tuple(self.custom_scheduled_status)):
+            if self.custom_scheduled_status and custom_status.startswith(tuple(self.custom_scheduled_status)):
                 return_value = self.custom_scheduled_status_map
 
-            if custom_status.startswith(tuple(self.custom_busy_status)):
+            if self.custom_busy_status and custom_status.startswith(tuple(self.custom_busy_status)):
                 return_value = self.custom_busy_status_map
 
             return return_value
