@@ -120,7 +120,7 @@ def parse_str_array(value_string, default, delimiter:str = ','):
     try:
         # Ensure that we return a true list, since the incoming string
         # might have a single element only.
-        if not isinstance(value_string, list):
+        if value_string and not isinstance(value_string, list):
             temp_value = []
             for value in value_string.split(delimiter):
                 temp_value.append(value)
