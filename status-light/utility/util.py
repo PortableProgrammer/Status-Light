@@ -25,6 +25,10 @@ def try_parse_int(value, base = 10, default = None):
     Value is, presumably, a string, though it can be any type that the int() function accepts:
     https://docs.python.org/3/library/functions.html#int
     """
+    # If we received None or an empty string, just return the default
+    if value in [None, '']:
+        return default
+
     try:
         return int(value, base)
     except BaseException as ex: # pylint: disable=broad-except
@@ -36,6 +40,10 @@ def try_parse_int(value, base = 10, default = None):
 # pylint: disable=redefined-builtin
 def try_parse_datetime(value:str, format = "%H:%M:%S", default = None):
     """For a given string value and format, attempts to convert that value into a datetime."""
+    # If we received None or an empty string, just return the default
+    if value in [None, '']:
+        return default
+
     try:
         return datetime.strptime(value, format)
     except BaseException as ex: # pylint: disable=broad-except
@@ -110,7 +118,8 @@ def parse_str_array(value_string, default, delimiter:str = ','):
         value_string = temp_value
 
     try:
-        # Ensure that we return a true list, since the incoming string might have a single element only.
+        # Ensure that we return a true list, since the incoming string
+        # might have a single element only.
         if not isinstance(value_string, list):
             temp_value = []
             for value in value_string.split(delimiter):

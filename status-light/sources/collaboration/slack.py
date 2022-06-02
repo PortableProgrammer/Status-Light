@@ -82,7 +82,8 @@ class SlackAPI:
             # Get the latest user info
             user_info = self.get_user_info(client)
             # Join the emoji and text with a space
-            custom_status = user_info['profile']['status_emoji'] + ' ' + user_info['profile']['status_text']
+            custom_status = user_info['profile']['status_emoji'] + ' ' \
+                + user_info['profile']['status_text']
 
             # For each of the Slack custom statuses, check them in reverse precedence order
             # Off, Available, Scheduled, Busy

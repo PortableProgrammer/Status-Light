@@ -64,7 +64,8 @@ if False in [localEnv.get_sources(), localEnv.get_tuya(), localEnv.get_colors(),
 
 # 23 - Make logging level configurable
 logger.info('Setting log level to %s', localEnv.log_level.name)
-print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Setting log level to', localEnv.log_level.name)
+print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Setting log level to',
+    localEnv.log_level.name)
 logger.setLevel(localEnv.log_level.name)
 
 # Depending on the selected sources, get the environment
@@ -81,7 +82,7 @@ if enum.StatusSource.WEBEX in localEnv.selected_sources:
 slack_api = None
 if enum.StatusSource.SLACK in localEnv.selected_sources:
     if localEnv.get_slack():
-        logger.info('Requested Slack,')
+        logger.info('Requested Slack')
         slack_api = slack.SlackAPI()
         slack_api.user_id = localEnv.slack_user_id
         slack_api.bot_token= localEnv.slack_bot_token
