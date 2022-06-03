@@ -61,7 +61,7 @@ services:
       - "SLACK_CUSTOM_AVAILABLE_STATUS=''"
       - "SLACK_CUSTOM_SCHEDULED_STATUS=':spiral_calendar_pad: In a meeting'"
       - "SLACK_CUSTOM_BUSY_STATUS=':headphones: In a huddle',':slack_call:',':no_entry_sign: Do not disturb'"
-      - "SLACK_CUSTOM_OFF_STATUS=':no_entry: Out of office',':airplane:'"
+      - "SLACK_CUSTOM_OFF_STATUS=':no_entry: Out of office',':airplane:',':palm_tree: Vacationing'"
       - "ACTIVE_DAYS=Monday,Tuesday,Wednesday,Thursday,Friday"
       - "ACTIVE_HOURS_START=08:00:00"
       - "ACTIVE_HOURS_END=17:00:00"
@@ -234,26 +234,26 @@ While Slack only offers the `active` and `inactive` presence flags, it also offe
 These options accept a list of strings that should match the beginning of the Slack custom status.
 Take the following scenario:
 ```python
-SLACK_BUSY_STATUS = [':headphones: In a huddle', ':no_entry_sign: Do not disturb']
+SLACK_BUSY_STATUS = [':no_entry_sign: Do Not Disturb']
 BUSY_STATUS = [CALL, DONOTDISTURB, MEETING, PRESENTING, PENDING]
 AVAILABLE_STATUS = ACTIVE
 slack.Presence = ACTIVE
 slack.CustomStatus = ':no_entry_sign: Do not disturb, I need to finish project X today!'
 ```
-In the example above, the Slack custom status would match, and therefore take precedence over the Slack presence, causing Status-Light to treat Slack as `BUSY` instead of `AVAILABLE`.
+In the example above, the Slack custom status would match (since it is a case-insensitive comparison), and therefore take precedence over the Slack presence, causing Status-Light to treat Slack as `BUSY` instead of `AVAILABLE`.
 
 #### `SLACK_CUSTOM_AVAILABLE_STATUS`
-- *Optional*
+- *Optional*, case-insensitive
 - Default value: `''`
 - Slack's `active` presence lines up nicely with the default [`AVAILABLE_STATUS`](#availablestatus), so there is no default custom override for this option.
 
 #### `SLACK_CUSTOM_SCHEDULED_STATUS`
-- *Optional*
+- *Optional*, case-insensitive
 - Default value: `':spiral_calendar_pad: In a meeting'`
 - If you have a calendaring source configured in Slack but not in Status-Light, this default [`SCHEDULED_STATUS`](#scheduledstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
 
 #### `SLACK_CUSTOM_BUSY_STATUS`
-- *Optional*
+- *Optional*, case-insensitive
 - Default value: `':headphones: In a huddle',':slack_call:',':no_entry_sign: Do not disturb'`
 - This custom status allows Status-Light to recognize Slack A/V collaboration modes, like [Huddles](https://slack.com/help/articles/4402059015315-Use-huddles-in-Slack) and [Calls](https://slack.com/help/articles/216771908-Make-calls-in-Slack).
 
@@ -262,8 +262,8 @@ In the example above, the Slack custom status would match, and therefore take pr
 **Note 2:** Slack, by default, will not automatically change your custom status when you join a Call or Huddle, if you already have one set. In this instance, Status-Light will react to your existing custom status and other Source statuses.
 
 #### `SLACK_CUSTOM_OFF_STATUS`
-- *Optional*
-- Default value: `':no_entry: Out of office',':airplane:'`
+- *Optional*, case-insensitive
+- Default value: `':no_entry: Out of office',':airplane:',':palm_tree: vacationing'`
 - If you have a calendaring source configured in Slack but not in Status-Light, this default [`OFF_STATUS`](#offstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
 
 ---

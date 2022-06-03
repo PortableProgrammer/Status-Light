@@ -81,23 +81,39 @@ class SlackAPI:
         try:
             # Get the latest user info
             user_info = self.get_user_info(client)
+
+            if not user_info['profile']:
+                return enum.Status.UNKNOWN
+
             # Join the emoji and text with a space
-            custom_status = user_info['profile']['status_emoji'] + ' ' \
-                + user_info['profile']['status_text']
+            custom_status = (user_info['profile']['status_emoji'] + ' ' \
+                + user_info['profile']['status_text']).casefold()
 
             # For each of the Slack custom statuses, check them in reverse precedence order
             # Off, Available, Scheduled, Busy
             if self.custom_off_status and custom_status.startswith(tuple(self.custom_off_status)):
                 return_value = self.custom_off_status_map
 
-            if self.custom_available_status and custom_status.startswith(tuple(self.custom_available_status)):
+            if self.custom_available_status and \
+                custom_status.startswith(tuple(self.custom_available_status)):
+
                 return_value = self.custom_available_status_map
 
-            if self.custom_scheduled_status and custom_status.startswith(tuple(self.custom_scheduled_status)):
+            if self.custom_scheduled_status and \
+                custom_status.startswith(tuple(self.custom_scheduled_status)):
+
                 return_value = self.custom_scheduled_status_map
 
-            if self.custom_busy_status and custom_status.startswith(tuple(self.custom_busy_status)):
+            if self.custom_busy_status and \
+                custom_status.startswith(tuple(self.custom_busy_status)):
+
                 return_value = self.custom_busy_status_map
+
+            # Check for Huddle and Call
+            if user_info['profile']['huddle_state'] == 'in_a_huddle' or \
+                user_info['profile']['status_emoji'] == ':slack_call:':
+
+                return_value = enum.Status.CALL
 
             return return_value
         except (SystemExit, KeyboardInterrupt):

@@ -111,19 +111,32 @@ def parse_enum(value_string, value_enum:Enum, description, default, value_is_lis
     return temp_value
 
 # 66 - Support Slack custom statuses
-def parse_str_array(value_string, default, delimiter:str = ','):
-    """Given a string containing an array of strings, attempts to parse the string into an array"""
+def parse_str_array(value_string, default, delimiter:str = ',', casefold:bool = False):
+    """Given a string containing an array of strings, attempts to parse the string into an array.
+    Pass casefold=True to build an array ready for case-insensitive comparison."""
     temp_value = default
     if value_string in [None, '']:
         value_string = temp_value
 
     try:
+        # If we were passed None, and the default is None, just return None
+        if not value_string:
+            return None
+
         # Ensure that we return a true list, since the incoming string
         # might have a single element only.
-        if value_string and not isinstance(value_string, list):
+        if not isinstance(value_string, list):
             temp_value = []
             for value in value_string.split(delimiter):
+                if casefold:
+                    value = value.casefold()
                 temp_value.append(value)
+        else:
+            if casefold:
+                temp_value = []
+                for value in value_string:
+                    temp_value.append(value.casefold())
+
     except BaseException as ex: # pylint: disable=broad-except
         logger.warning('Exception while parsing a string array: %s', ex)
         temp_value = default
