@@ -229,7 +229,7 @@ elif currentStatus in offStatus:
 
 ### **Slack Custom Statuses**
 
-While Slack only offers the `active` and `inactive` presence flags, it also offers the ability to set custom emoji and text statuses. By default, Slack uses several of these to indicate a more granular status, for example, `:slack_call:` or `:spiral_calendar_pad: In a meeting`. Status-Light can read ths custom emoji and text to infer a more specific status than `active` or `inactive`. For example, you may be `active` in Slack, but also in a Slack Call (`:slack_call:`) or a Slack Huddle (`:headphones: In a huddle`). In this instance, Status-Light can interpret the custom status message as `CALL`, and set the appropriate color.
+While Slack only offers the `active` and `inactive` presence flags, it also offers the ability to set custom emoji and text statuses. By default, Slack uses several of these to indicate a more granular status, for example, `:slack_call:` or `:spiral_calendar_pad: In a meeting`. Status-Light can read this custom emoji and text to infer a more specific status than `active` or `inactive`. For example, you may be `active` in Slack, but also in a Slack Call (`:slack_call:`) or a Slack Huddle (`:headphones: In a huddle`). In this instance, Status-Light can interpret the custom status message as `CALL`, and set the appropriate color.
 
 These options accept a list of strings that should match the beginning of the Slack custom status.
 Take the following scenario:
