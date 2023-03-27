@@ -51,7 +51,7 @@ def try_parse_datetime(value:str, format = "%H:%M:%S", default = None):
             ex, default)
         return default
 
-def is_active_hours(active_days:list(enum.Weekday), active_hours_start:time,
+def is_active_hours(active_days:list[enum.Weekday], active_hours_start:time,
     active_hours_end:time):
     """For a given set of active days and start and end times,
     determine if datetime.now() is within the active period."""
