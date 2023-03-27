@@ -88,9 +88,8 @@ def parse_color(color_string, default):
             temp_color = parse_enum(color_string, enum.Color, "parse_color", default,
                 value_is_list=False).value
     except BaseException as ex: # pylint: disable=broad-except
-        # 74: Log enums as names, not values
         logger.warning('Exception while parsing color: %s, using default: %s',
-            ex, default.name.lower())
+            ex, default)
         temp_color = default
     return temp_color
 
