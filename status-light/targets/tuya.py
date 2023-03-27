@@ -90,6 +90,7 @@ class TuyaLight:
             self.turn_off()
         # In the case that we made it here without a valid state,
         # just turn the light off and warn about it
+        # 74: Log enums as names, not values
         else:
-            logger.warning('Called with an invalid status: %s',status)
+            logger.warning('Called with an invalid status: %s',status.name.lower())
             self.turn_off()

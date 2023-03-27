@@ -42,7 +42,14 @@ print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),'Startup')
 # pylint: disable=unused-argument
 def receive_signal(signal_number, frame):
     """Signals the endless while loop to exit, allowing a clean shutdown."""
-    logger.warning('Signal received: %s', signal_number)
+    # 74: Convert integer to signal name
+    # Don't allow this to fail, just continue on
+    signal_name = 'UNKNOWN'
+    try:
+        signal_name = signal.Signals(signal_number).name
+    except ValueError:
+        logger.warning('Exception encountered converting %s to signal.Signals: %s', signal_number, ex)
+    logger.warning('Signal received: %s', signal_name)
     # TODO: Find a better way to handle this
     # pylint: disable=global-statement
     global shouldContinue
@@ -174,8 +181,9 @@ while shouldContinue:
                 logger_string += logger_format.format(enum.StatusSource.GOOGLE.name.capitalize(),
                     googleStatus.name.lower())
 
+            # 74: Log enums as names, not values
             #logger.debug('Webex: %s | Slack: %s | Office: %s | Google: %s',
-            #    webexStatus, slackStatus, officeStatus, googleStatus)
+            #    webexStatus.name.lower(), slackStatus.name.lower(), officeStatus.name.lower(), googleStatus.name.lower())
 
             logger.info(logger_string.lstrip().rstrip(' |'))
 
@@ -186,7 +194,8 @@ while shouldContinue:
             # Webex currently takes precendence over Slack
             currentStatus = webexStatus
             if webexStatus == enum.Status.UNKNOWN or webexStatus in localEnv.off_status:
-                logger.debug('Using slackStatus: %s', slackStatus)
+                # 74: Log enums as names, not values
+                logger.debug('Using slackStatus: %s', slackStatus.name.lower())
                 # Fall through to Slack
                 currentStatus = slackStatus
 
@@ -197,11 +206,12 @@ while shouldContinue:
 
                 logger.debug('Using calendar-based status')
                 # Office should take precedence over Google for now
+                # 74: Log enums as names, not values
                 if officeStatus != enum.Status.UNKNOWN:
-                    logger.debug('Using officeStatus: %s', officeStatus)
+                    logger.debug('Using officeStatus: %s', officeStatus.name.lower())
                     currentStatus = officeStatus
                 else:
-                    logger.debug('Using googleStatus: %s', googleStatus)
+                    logger.debug('Using googleStatus: %s', googleStatus.name.lower())
                     currentStatus = googleStatus
 
             if lastStatus != currentStatus:
@@ -210,7 +220,8 @@ while shouldContinue:
                 print()
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
                     'Found new status:',currentStatus, end='', flush=True)
-                logger.info('Transitioning to %s',currentStatus)
+                # 74: Log enums as names, not values
+                logger.info('Transitioning to %s',currentStatus.name.lower())
                 light.transition_status(currentStatus, localEnv)
             else:
                 print('.', end='', flush=True)
