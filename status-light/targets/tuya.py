@@ -18,8 +18,9 @@ from utility import env
 
 logger = logging.getLogger(__name__)
 
+
 class TuyaLight:
-    device = ''
+    device: dict
 
     def turn_on(self):
         return self.set_single_state(1, True)
@@ -35,14 +36,14 @@ class TuyaLight:
             try:
                 status = tuyaface.set_status(self.device, {index: value})
             except (SystemExit, KeyboardInterrupt):
-                count = retry # Break the loop
-            except BaseException as ex: # pylint: disable=broad-except
+                count = retry  # Break the loop
+            except BaseException as ex:  # pylint: disable=broad-except
                 logger.warning('Exception sending to Tuya device: %s', ex)
                 count = count + 1
                 time.sleep(1)
         return status
 
-    def set_state(self, mode = 'white', color = 'ffffff', brightness: int = 128):
+    def set_state(self, mode='white', color='ffffff', brightness: int = 128):
         # DPS:
         # 1: Power, bool
         # 2: Mode, 'white' or 'colour'
@@ -64,12 +65,11 @@ class TuyaLight:
         self.set_single_state(5, color)
         self.set_single_state(2, mode)
 
-
     def get_status(self):
         return tuyaface.status(self.device)
 
     def transition_status(self, status: enum.Status, environment: env.Environment):
-        #43: Coalesce the statuses and only execute setState once.
+        # 43: Coalesce the statuses and only execute setState once.
         # This will still allow a single status to be in more than one list,
         # but will not cause the light to rapidly switch between states.
         color = None
@@ -92,5 +92,6 @@ class TuyaLight:
         # just turn the light off and warn about it
         # 74: Log enums as names, not values
         else:
-            logger.warning('Called with an invalid status: %s',status.name.lower())
+            logger.warning('Called with an invalid status: %s',
+                           status.name.lower())
             self.turn_off()

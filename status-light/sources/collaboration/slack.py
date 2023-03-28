@@ -17,40 +17,39 @@ from utility import enum
 
 logger = logging.getLogger(__name__)
 
-class SlackAPI:
-    user_id = None
-    bot_token = None
-    # 66 - Support Slack custom statuses
-    custom_available_status = None
-    custom_available_status_map = None
-    custom_busy_status = None
-    custom_busy_status_map = None
-    custom_scheduled_status = None
-    custom_scheduled_status_map = None
-    custom_off_status = None
-    custom_off_status_map = None
 
-    def get_client(self):
+class SlackAPI:
+    user_id: str = ''
+    bot_token: str = ''
+    # 66 - Support Slack custom statuses
+    custom_available_status: list[str] = []
+    custom_available_status_map: enum.Status = enum.Status.UNKNOWN
+    custom_busy_status: list[str] = []
+    custom_busy_status_map: enum.Status = enum.Status.UNKNOWN
+    custom_scheduled_status: list[str] = []
+    custom_scheduled_status_map: enum.Status = enum.Status.UNKNOWN
+    custom_off_status: list[str] = []
+    custom_off_status_map: enum.Status = enum.Status.UNKNOWN
+
+    def get_client(self) -> WebClient:
         return WebClient(token=self.bot_token)
 
-    def get_user_info(self, client:WebClient = None):
+    def get_user_info(self, client: WebClient) -> dict | None:
         response = None
-        if client is None:
-            client = self.get_client()
         try:
-            response = client.users_info(user=self.user_id) # pylint: disable=no-value-for-parameter
-
-            return response.data['user'] # pylint: disable=no-member
+            response = client.users_info(user=self.user_id)
+            return response.data['user']  # type: ignore
         except (SystemExit, KeyboardInterrupt):
             pass
         except SlackApiError as ex:
-            logger.warning('Slack Exception while getting user info: %s', ex.response['error'])
+            logger.warning(
+                'Slack Exception while getting user info: %s', ex.response['error'])
             return None
-        except BaseException as ex: # pylint: disable=broad-except
+        except BaseException as ex:  # pylint: disable=broad-except
             logger.warning('Exception while getting Slack user info: %s', ex)
             return None
 
-    def get_user_presence(self):
+    def get_user_presence(self) -> enum.Status:
         client = self.get_client()
         response = None
         return_value = enum.Status.UNKNOWN
@@ -60,34 +59,37 @@ class SlackAPI:
 
             if return_value is enum.Status.UNKNOWN:
                 response = client.users_getPresence(user=self.user_id)
-                match response.data['presence']: # pylint: disable=no-member
+                match response.data['presence']:  # type: ignore
                     case "active":
                         return_value = enum.Status.ACTIVE
                     case "away":
                         return_value = enum.Status.INACTIVE
-            return return_value
         except (SystemExit, KeyboardInterrupt):
             pass
         except SlackApiError as ex:
-            logger.warning('Slack Exception while getting user presence: %s', ex.response['error'])
-            return enum.Status.UNKNOWN
-        except BaseException as ex: # pylint: disable=broad-except
-            logger.warning('Exception while getting Slack user presence: %s', ex)
-            return enum.Status.UNKNOWN
+            logger.warning(
+                'Slack Exception while getting user presence: %s', ex.response['error'])
+            return_value = enum.Status.UNKNOWN
+        except BaseException as ex:  # pylint: disable=broad-except
+            logger.warning(
+                'Exception while getting Slack user presence: %s', ex)
+            return_value = enum.Status.UNKNOWN
 
-    def _parse_custom_status(self, client:WebClient,  default:enum.Status = enum.Status.UNKNOWN):
+        return return_value
+
+    def _parse_custom_status(self, client: WebClient,  default: enum.Status = enum.Status.UNKNOWN) -> enum.Status:
         return_value = default
 
         try:
             # Get the latest user info
             user_info = self.get_user_info(client)
 
-            if not user_info['profile']:
+            if not user_info or user_info['profile']:
                 return enum.Status.UNKNOWN
 
             # Join the emoji and text with a space
-            custom_status = (user_info['profile']['status_emoji'] + ' ' \
-                + user_info['profile']['status_text']).casefold()
+            custom_status = (user_info['profile']['status_emoji'] + ' '
+                             + user_info['profile']['status_text']).casefold()
 
             # For each of the Slack custom statuses, check them in reverse precedence order
             # Off, Available, Scheduled, Busy
@@ -95,32 +97,35 @@ class SlackAPI:
                 return_value = self.custom_off_status_map
 
             if self.custom_available_status and \
-                custom_status.startswith(tuple(self.custom_available_status)):
+                    custom_status.startswith(tuple(self.custom_available_status)):
 
                 return_value = self.custom_available_status_map
 
             if self.custom_scheduled_status and \
-                custom_status.startswith(tuple(self.custom_scheduled_status)):
+                    custom_status.startswith(tuple(self.custom_scheduled_status)):
 
                 return_value = self.custom_scheduled_status_map
 
             if self.custom_busy_status and \
-                custom_status.startswith(tuple(self.custom_busy_status)):
+                    custom_status.startswith(tuple(self.custom_busy_status)):
 
                 return_value = self.custom_busy_status_map
 
             # Check for Huddle and Call
             if user_info['profile']['huddle_state'] == 'in_a_huddle' or \
-                user_info['profile']['status_emoji'] == ':slack_call:':
+                    user_info['profile']['status_emoji'] == ':slack_call:':
 
                 return_value = enum.Status.CALL
 
-            return return_value
         except (SystemExit, KeyboardInterrupt):
             pass
         except SlackApiError as ex:
-            logger.warning('Slack Exception while parsing custom status: %s', ex.response['error'])
-            return enum.Status.UNKNOWN
-        except BaseException as ex: # pylint: disable=broad-except
-            logger.warning('Exception while parsing Slack custom status: %s', ex)
-            return enum.Status.UNKNOWN
+            logger.warning(
+                'Slack Exception while parsing custom status: %s', ex.response['error'])
+            return_value = enum.Status.UNKNOWN
+        except BaseException as ex:  # pylint: disable=broad-except
+            logger.warning(
+                'Exception while parsing Slack custom status: %s', ex)
+            return_value = enum.Status.UNKNOWN
+
+        return return_value

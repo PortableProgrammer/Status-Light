@@ -8,9 +8,10 @@ Enumeration Definition
 # Standard imports
 import enum
 
+
 class StatusSource(enum.IntEnum):
     """Status Sources"""
-    UNKNOWN = enum.auto()
+    UNKNOWN = 0
 
     WEBEX = enum.auto()
     OFFICE365 = enum.auto()
@@ -19,12 +20,13 @@ class StatusSource(enum.IntEnum):
     # 48 - Add Slack suport
     SLACK = enum.auto()
 
-    def _missing(self, value): # pylint: disable=unused-argument
+    def _missing(self, value):  # pylint: disable=unused-argument
         return self.UNKNOWN
+
 
 class Status(enum.IntEnum):
     """User statuses"""
-    UNKNOWN = enum.auto()
+    UNKNOWN = 0
 
     # Collaboration (Webex, Slack)
     ACTIVE = enum.auto()
@@ -42,10 +44,11 @@ class Status(enum.IntEnum):
     OUTOFOFFICE = enum.auto()
     WORKINGELSEWHERE = enum.auto()
 
-    def _missing_(self, value): # pylint: disable=arguments-differ
+    def _missing_(self, value):  # pylint: disable=arguments-differ
         return self.UNKNOWN
 
-class Color(enum.Enum):
+
+class Color(enum.StrEnum):
     """Default Colors"""
     UNKNOWN = 'xxxxxx'
 
@@ -55,8 +58,9 @@ class Color(enum.Enum):
     GREEN = '00ff00'
     BLUE = '0000ff'
 
-    def _missing_(self, value): # pylint: disable=arguments-differ
+    def _missing_(self, value):  # pylint: disable=arguments-differ
         return self.UNKNOWN
+
 
 class Weekday(enum.IntEnum):
     """Days of the week"""
@@ -70,18 +74,19 @@ class Weekday(enum.IntEnum):
 
     UNKNOWN = 7
 
-    def _missing(self, value): # pylint: disable=unused-argument
+    def _missing(self, value):  # pylint: disable=unused-argument
         return self.UNKNOWN
+
 
 class LogLevel(enum.IntEnum):
     """Log Levels"""
-    CRITICAL = enum.auto()
-    ERROR = enum.auto()
-    WARNING = enum.auto()
-    INFO = enum.auto()
-    DEBUG = enum.auto()
+    CRITICAL = 50
+    ERROR = 40
+    WARNING = 30
+    INFO = 20
+    DEBUG = 10
 
-    UNKNOWN = enum.auto()
+    NOTSET = 0
 
-    def _missing(self, value): # pylint: disable=unused-argument
-        return self.UNKNOWN
+    def _missing(self, value):  # pylint: disable=unused-argument
+        return self.NOTSET

@@ -5,7 +5,7 @@ https://github.com/portableprogrammer/Status-Light/
 Google Calendar Source
 """
 
-#47: Add Google Calendar support
+# 47: Add Google Calendar support
 # https://github.com/portableprogrammer/Status-Light/
 
 # Standard imports
@@ -24,6 +24,7 @@ from googleapiclient.discovery import build
 from utility import enum
 
 logger = logging.getLogger(__name__)
+
 
 class GoogleCalendarAPI:
     """Handles Google Calendar Free/Busy"""
@@ -45,15 +46,18 @@ class GoogleCalendarAPI:
         # time.
         creds = None
         norm_token_path = os.path.normpath(self.tokenStore + '/token.json')
-        norm_cred_path = os.path.normpath(self.credentialStore + '/' + self.CREDENTIALS_FILENAME)
+        norm_cred_path = os.path.normpath(
+            self.credentialStore + '/' + self.CREDENTIALS_FILENAME)
         if os.path.exists(norm_token_path):
-            creds = Credentials.from_authorized_user_file(norm_token_path, self.SCOPES)
+            creds = Credentials.from_authorized_user_file(
+                norm_token_path, self.SCOPES)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(norm_cred_path, self.SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    norm_cred_path, self.SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             # Per the docs, encoding should only be used in 'text' mode, which we are not.
@@ -79,13 +83,14 @@ class GoogleCalendarAPI:
         try:
             service = self.get_calendar_service()
             now = datetime.utcnow().isoformat() + 'Z'
-            now_plus = (datetime.utcnow() + timedelta(minutes=5)).isoformat() + 'Z'
+            now_plus = (datetime.utcnow() +
+                        timedelta(minutes=5)).isoformat() + 'Z'
             query = {
-                "timeMin" : now,
-                "timeMax" : now_plus,
-                "items" : [
+                "timeMin": now,
+                "timeMax": now_plus,
+                "items": [
                     {
-                        "id" : "primary"
+                        "id": "primary"
                     }
                 ]
             }
@@ -103,6 +108,6 @@ class GoogleCalendarAPI:
                 return enum.Status.FREE
         except (SystemExit, KeyboardInterrupt):
             return enum.Status.UNKNOWN
-        except BaseException as ex: # pylint: disable=broad-except
+        except BaseException as ex:  # pylint: disable=broad-except
             logger.warning('Exception while getting Google status: %s', ex)
             return enum.Status.UNKNOWN
