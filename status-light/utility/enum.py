@@ -20,7 +20,7 @@ class StatusSource(enum.IntEnum):
     # 48 - Add Slack suport
     SLACK = enum.auto()
 
-    def _missing(self, value):  # pylint: disable=unused-argument
+    def _missing(self, value):
         return self.UNKNOWN
 
 
@@ -44,7 +44,7 @@ class Status(enum.IntEnum):
     OUTOFOFFICE = enum.auto()
     WORKINGELSEWHERE = enum.auto()
 
-    def _missing_(self, value):  # pylint: disable=arguments-differ
+    def _missing_(self, value):
         return self.UNKNOWN
 
 
@@ -58,7 +58,7 @@ class Color(enum.StrEnum):
     GREEN = '00ff00'
     BLUE = '0000ff'
 
-    def _missing_(self, value):  # pylint: disable=arguments-differ
+    def _missing_(self, value):
         return self.UNKNOWN
 
 
@@ -74,7 +74,7 @@ class Weekday(enum.IntEnum):
 
     UNKNOWN = 7
 
-    def _missing(self, value):  # pylint: disable=unused-argument
+    def _missing(self, value):
         return self.UNKNOWN
 
 
@@ -88,5 +88,5 @@ class LogLevel(enum.IntEnum):
 
     NOTSET = 0
 
-    def _missing(self, value):  # pylint: disable=unused-argument
+    def _missing(self, value):
         return self.NOTSET

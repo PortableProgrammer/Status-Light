@@ -40,8 +40,6 @@ print(datetime.now().strftime(
 # Register for SIGHUP, SIGINT, SIGQUIT, SIGTERM
 # At the moment, we'll treat them all the same and exit cleanly
 # Since these are OS-level calls, we'll just ignore the argument issues
-# pylint: disable=unused-argument
-
 
 def receive_signal(signal_number, frame):
     """Signals the endless while loop to exit, allowing a clean shutdown."""
@@ -55,7 +53,6 @@ def receive_signal(signal_number, frame):
             'Exception encountered converting %s to signal.Signals: %s', signal_number, ex)
     logger.warning('Signal received: %s', signal_name)
     # TODO: Find a better way to handle this
-    # pylint: disable=global-statement
     global shouldContinue
     shouldContinue = False
 
@@ -140,7 +137,6 @@ if enum.StatusSource.GOOGLE in localEnv.selected_sources:
 # Tuya
 light = tuya.TuyaLight()
 # TUYA_DEVICE is a JSON string, and needs to be converted to an actual JSON object
-# pylint: disable=eval-used
 light.device = eval(localEnv.tuya_device)
 logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 # TODO: Connect to the device and ensure it's available
@@ -245,7 +241,7 @@ while shouldContinue:
     except (SystemExit, KeyboardInterrupt) as ex:
         logger.info('%s received; shutting down...', ex.__class__.__name__)
         shouldContinue = False
-    except BaseException as ex:  # pylint: disable=broad-except
+    except BaseException as ex:
         logger.warning('Exception during main loop: %s', ex)
         logger.debug(ex)
 

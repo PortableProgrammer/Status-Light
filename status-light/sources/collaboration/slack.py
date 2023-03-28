@@ -45,7 +45,7 @@ class SlackAPI:
             logger.warning(
                 'Slack Exception while getting user info: %s', ex.response['error'])
             return None
-        except BaseException as ex:  # pylint: disable=broad-except
+        except BaseException as ex:
             logger.warning('Exception while getting Slack user info: %s', ex)
             return None
 
@@ -70,7 +70,7 @@ class SlackAPI:
             logger.warning(
                 'Slack Exception while getting user presence: %s', ex.response['error'])
             return_value = enum.Status.UNKNOWN
-        except BaseException as ex:  # pylint: disable=broad-except
+        except BaseException as ex:
             logger.warning(
                 'Exception while getting Slack user presence: %s', ex)
             return_value = enum.Status.UNKNOWN
@@ -123,7 +123,7 @@ class SlackAPI:
             logger.warning(
                 'Slack Exception while parsing custom status: %s', ex.response['error'])
             return_value = enum.Status.UNKNOWN
-        except BaseException as ex:  # pylint: disable=broad-except
+        except BaseException as ex:
             logger.warning(
                 'Exception while parsing Slack custom status: %s', ex)
             return_value = enum.Status.UNKNOWN

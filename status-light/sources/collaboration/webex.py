@@ -28,7 +28,7 @@ class WebexAPI:
                 person_id).status.lower()]
         except (SystemExit, KeyboardInterrupt):
             pass
-        except BaseException as ex:  # pylint: disable=broad-except
+        except BaseException as ex:
             logger.warning(
                 'Exception while getting Webex person status: %s', ex)
             return_value = enum.Status.UNKNOWN

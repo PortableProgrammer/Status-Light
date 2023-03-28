@@ -61,7 +61,6 @@ class GoogleCalendarAPI:
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             # Per the docs, encoding should only be used in 'text' mode, which we are not.
-            # pylint: disable=unspecified-encoding
             with open(norm_token_path, 'w') as token:
                 token.write(creds.to_json())
         return creds
@@ -94,9 +93,7 @@ class GoogleCalendarAPI:
                     }
                 ]
             }
-            # Since the service instance of Resource is dynamically-generated,
-            # Pylint has no member definitions; ignore the 'no-member' error
-            # pylint: disable=no-member
+
             freebusy_result = service.freebusy().query(body=query).execute()
             logger.debug('Got Free/Busy Result: %s', freebusy_result)
             freebusy = freebusy_result['calendars']['primary']['busy']
@@ -108,6 +105,6 @@ class GoogleCalendarAPI:
                 return enum.Status.FREE
         except (SystemExit, KeyboardInterrupt):
             return enum.Status.UNKNOWN
-        except BaseException as ex:  # pylint: disable=broad-except
+        except BaseException as ex:
             logger.warning('Exception while getting Google status: %s', ex)
             return enum.Status.UNKNOWN

@@ -37,7 +37,7 @@ class TuyaLight:
                 status = tuyaface.set_status(self.device, {index: value})
             except (SystemExit, KeyboardInterrupt):
                 count = retry  # Break the loop
-            except BaseException as ex:  # pylint: disable=broad-except
+            except BaseException as ex:
                 logger.warning('Exception sending to Tuya device: %s', ex)
                 count = count + 1
                 time.sleep(1)
