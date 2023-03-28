@@ -75,7 +75,7 @@ class Environment:
 
     def get_sources(self) -> bool:
         # 32 - SOURCES variable default is wrong
-        self.selected_sources = util.parse_enum_list(os.environ.get('SOURCES'),
+        self.selected_sources = util.parse_enum_list(os.environ.get('SOURCES'),  # type: ignore
                                                      enum.StatusSource, 'SOURCES', self.selected_sources)
         return_value = (None is not self.selected_sources)
         # 34 - Better environment variable errors
@@ -158,20 +158,20 @@ class Environment:
 
     def get_status(self) -> bool:
         self.off_status = util.parse_enum_list(os.environ.get('OFF_STATUS', ''),
-                                               enum.Status, 'OFF_STATUS', self.off_status)
+                                               enum.Status, 'OFF_STATUS', self.off_status)  # type: ignore
         self.available_status = util.parse_enum_list(os.environ.get('AVAILABLE_STATUS', ''),
-                                                     enum.Status, 'AVAILABLE_STATUS', self.available_status)
+                                                     enum.Status, 'AVAILABLE_STATUS', self.available_status)  # type: ignore
         self.busy_status = util.parse_enum_list(os.environ.get('BUSY_STATUS', ''),
-                                                enum.Status, 'BUSY_STATUS', self.busy_status)
+                                                enum.Status, 'BUSY_STATUS', self.busy_status)  # type: ignore
         self.scheduled_status = util.parse_enum_list(os.environ.get('SCHEDULED_STATUS', ''),
-                                                     enum.Status, 'SCHEDULED_STATUS', self.scheduled_status)
+                                                     enum.Status, 'SCHEDULED_STATUS', self.scheduled_status)  # type: ignore
         return ('' not in [self.off_status, self.available_status,
                            self.busy_status, self.scheduled_status])
 
     # 45 - Allow user to specify active hours
     def get_active_time(self) -> bool:
         self.active_days = util.parse_enum_list(os.environ.get('ACTIVE_DAYS', ''),
-                                                enum.Weekday, 'ACTIVE_DAYS', self.active_days)
+                                                enum.Weekday, 'ACTIVE_DAYS', self.active_days)  # type: ignore
         self.active_hours_start = util.try_parse_datetime(
             os.environ.get('ACTIVE_HOURS_START', ''),
             datetime.combine(datetime.today(), self.active_hours_start)).time()
@@ -190,5 +190,5 @@ class Environment:
 
     def get_log_level(self) -> bool:
         self.log_level = util.parse_enum(os.environ.get('LOGLEVEL', ''),
-                                         enum.LogLevel, 'LOGLEVEL', self.log_level)
+                                         enum.LogLevel, 'LOGLEVEL', self.log_level)  # type: ignore
         return self.log_level != ''
