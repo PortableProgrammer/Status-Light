@@ -1,5 +1,5 @@
 """Status-Light
-(c) 2020-2022 Nick Warner
+(c) 2020-2023 Nick Warner
 https://github.com/portableprogrammer/Status-Light/
 
 Slack Source
