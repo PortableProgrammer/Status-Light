@@ -232,6 +232,8 @@ while shouldContinue:
             if outside_hours:
                 logger.debug('Already transitioned to off, doing nothing')
             else:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                      'Outside of active hours, transitioning to off', flush=True)
                 logger.info('Outside of active hours, transitioning to off')
                 light.turn_off()
             outside_hours = True
