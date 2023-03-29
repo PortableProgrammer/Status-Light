@@ -37,7 +37,7 @@ class Environment:
         ':no_entry: Out of Office', ':airplane:', ':palm_tree: Vacationing']
     slack_available_status: list[str] = ['']
     slack_scheduled_status: list[str] = [':spiral_calendar_pad: In a meeting']
-    slack_busy_status: list[str] = [':no_entry_sign: Do not Disturb']
+    slack_busy_status: list[str] = [':no_entry_sign:', ':no_entry: Do not Disturb']
 
     office_app_id: str = ''
     office_app_secret: str = ''

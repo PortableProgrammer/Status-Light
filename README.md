@@ -60,7 +60,7 @@ services:
       - "SLACK_BOT_TOKEN=xxx"
       - "SLACK_CUSTOM_AVAILABLE_STATUS=''"
       - "SLACK_CUSTOM_SCHEDULED_STATUS=':spiral_calendar_pad: In a meeting'"
-      - "SLACK_CUSTOM_BUSY_STATUS=':headphones: In a huddle',':slack_call:',':no_entry_sign: Do not disturb'"
+      - "SLACK_CUSTOM_BUSY_STATUS=':headphones: In a huddle',':slack_call:',':no_entry_sign:',':no_entry: Do not disturb'"
       - "SLACK_CUSTOM_OFF_STATUS=':no_entry: Out of office',':airplane:',':palm_tree: Vacationing'"
       - "ACTIVE_DAYS=Monday,Tuesday,Wednesday,Thursday,Friday"
       - "ACTIVE_HOURS_START=08:00:00"
@@ -254,8 +254,8 @@ In the example above, the Slack custom status would match (since it is a case-in
 
 #### `SLACK_CUSTOM_BUSY_STATUS`
 - *Optional*, case-insensitive
-- Default value: `':headphones: In a huddle',':slack_call:',':no_entry_sign: Do not disturb'`
-- This custom status allows Status-Light to recognize Slack A/V collaboration modes, like [Huddles](https://slack.com/help/articles/4402059015315-Use-huddles-in-Slack) and [Calls](https://slack.com/help/articles/216771908-Make-calls-in-Slack).
+- Default value: `':no_entry_sign:',':no_entry: Do not disturb'`
+- This custom status also includes Slack A/V collaboration modes by default, like [Huddles](https://slack.com/help/articles/4402059015315-Use-huddles-in-Slack) and [Calls](https://slack.com/help/articles/216771908-Make-calls-in-Slack).
 
 **Note 1:** For the default Call and Huddle custom statuses to work, you must have selected `Set my status to...` for Calls and Huddles in the Slack preferences.
 
@@ -312,9 +312,7 @@ Example `TUYA_DEVICE` value:
 
 **Docker Secrets:** This variable can instead be specified in a secrets file, using the `TUYA_DEVICE_FILE` variable.
 
-**Note 1:** Status-Light will accept an FQDN instead of IP, as long as the name can be resolved. Tuya devices will typically register themselves with the last 6 digits of the device ID, for example `ESP_xxxxxx.local`.
-
-**Note 2:** For Status-Light's purposes, protocol can be 3.0+, but some older devices may not function correctly with the newer protocols, so this may have to be adjusted.
+**Note:** Status-Light will accept an FQDN instead of IP, as long as the name can be resolved. Tuya devices will typically register themselves with the last 6 digits of the device ID, for example `ESP_xxxxxx.local`.
 
 #### `TUYA_BRIGHTNESS`
 

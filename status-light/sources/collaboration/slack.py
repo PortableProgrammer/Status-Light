@@ -84,7 +84,7 @@ class SlackAPI:
             # Get the latest user info
             user_info = self.get_user_info(client)
 
-            if not user_info or user_info['profile']:
+            if not user_info or not user_info['profile']:
                 return enum.Status.UNKNOWN
 
             # Join the emoji and text with a space
