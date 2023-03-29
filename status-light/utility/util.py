@@ -1,5 +1,5 @@
 """Status-Light
-(c) 2020-2022 Nick Warner
+(c) 2020-2023 Nick Warner
 https://github.com/portableprogrammer/Status-Light/
 
 Utility Functions
@@ -8,7 +8,7 @@ Utility Functions
 # Standard imports
 import logging
 from datetime import datetime, time
-from enum import Enum
+from enum import Enum, EnumType
 import re
 import os
 
@@ -16,10 +16,12 @@ import os
 # Project imports
 from utility import enum
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 # 41: Replace decoractor with utility function
-def try_parse_int(value, base = 10, default = None):
+
+
+def try_parse_int(value: str, default: int, base: int = 10) -> int:
     """For a given value and base, attempts to convert that value into an integer.
 
     Value is, presumably, a string, though it can be any type that the int() function accepts:
@@ -31,14 +33,15 @@ def try_parse_int(value, base = 10, default = None):
 
     try:
         return int(value, base)
-    except BaseException as ex: # pylint: disable=broad-except
+    except BaseException as ex:
         logger.warning('Exception encountered during try_parse_int: %s, using default: %s',
-            ex, default)
+                       ex, default)
         return default
 
 # 45: Add support for active hours
-# pylint: disable=redefined-builtin
-def try_parse_datetime(value:str, format = "%H:%M:%S", default = None):
+
+
+def try_parse_datetime(value: str, default: datetime, format="%H:%M:%S") -> datetime:
     """For a given string value and format, attempts to convert that value into a datetime."""
     # If we received None or an empty string, just return the default
     if value in [None, '']:
@@ -46,13 +49,14 @@ def try_parse_datetime(value:str, format = "%H:%M:%S", default = None):
 
     try:
         return datetime.strptime(value, format)
-    except BaseException as ex: # pylint: disable=broad-except
+    except BaseException as ex:
         logger.warning('Exception while parsing datetime: %s, using default: %s',
-            ex, default)
+                       ex, default)
         return default
 
-def is_active_hours(active_days:list(enum.Weekday), active_hours_start:time,
-    active_hours_end:time):
+
+def is_active_hours(active_days: list[enum.Weekday], active_hours_start: time,
+                    active_hours_end: time) -> bool:
     """For a given set of active days and start and end times,
     determine if datetime.now() is within the active period."""
     try:
@@ -67,11 +71,12 @@ def is_active_hours(active_days:list(enum.Weekday), active_hours_start:time,
 
         # Otherwise, we're within an active period
         return True
-    except BaseException as ex: # pylint: disable=broad-except
+    except BaseException as ex:
         logger.warning('Exception while checking for active hours: %s', ex)
         return False
 
-def parse_color(color_string, default):
+
+def parse_color(color_string: str, default: str) -> str:
     """Given a string, attempts to parse the string into a hex color
     or a Color enum."""
     temp_color = default
@@ -85,65 +90,76 @@ def parse_color(color_string, default):
             temp_color = color_string
         else:
             # _parse_enum returns an enum, get the value (the actual hex color value)
-            temp_color = parse_enum(color_string, enum.Color, "parse_color", default,
-                value_is_list=False).value
-    except BaseException as ex: # pylint: disable=broad-except
+            temp_color = enum.Color(parse_enum(
+                color_string, enum.Color, "parse_color", enum.Color(default))).value
+    except BaseException as ex:
         logger.warning('Exception while parsing color: %s, using default: %s',
-            ex, default)
+                       ex, default)
         temp_color = default
     return temp_color
 
-def parse_enum(value_string, value_enum:Enum, description, default, value_is_list:bool = True):
+
+def parse_enum(value_string: str, value_enum: EnumType, description: str, default) -> EnumType:
     """Given a string and an enumeration, attempts to parse the string into enums."""
-    temp_value = default
+    temp_value: EnumType = default
     if value_string in [None, '']:
         return temp_value
 
     try:
-        if value_is_list:
-            temp_value = list(value_enum[value.upper().strip()]
-                for value in value_string.split(','))
-        else:
-            temp_value = value_enum[value_string.upper().strip()]
-    except BaseException as ex: # pylint: disable=broad-except
+        temp_value = value_enum[value_string.upper().strip()]
+    except BaseException as ex:
+        logger.warning('Exception encountered for %s: %s', description, ex)
+        temp_value = default
+    return temp_value
+
+
+def parse_enum_list(value_string: str, value_enum: EnumType, description: str, default) -> list[EnumType]:
+    """Given a string and an enumeration, attempts to parse the string into enums."""
+    temp_value: list[EnumType] = default
+    if value_string in [None, '']:
+        return temp_value
+
+    try:
+        temp_value = list(parse_enum(value, value_enum, description, default)
+                          for value in value_string.split(','))
+    except BaseException as ex:
         logger.warning('Exception encountered for %s: %s', description, ex)
         temp_value = default
     return temp_value
 
 # 66 - Support Slack custom statuses
-def parse_str_array(value_string, default, delimiter:str = ',', casefold:bool = False):
+
+
+def parse_str_array(value_string: str, default: list[str], delimiter: str = ',', casefold: bool = False) -> list[str]:
     """Given a string containing an array of strings, attempts to parse the string into an array.
     Pass casefold=True to build an array ready for case-insensitive comparison."""
     temp_value = default
     if value_string in [None, '']:
-        value_string = temp_value
+        return temp_value
 
     try:
-        # If we were passed None, and the default is None, just return None
-        if not value_string:
-            return None
-
         # Ensure that we return a true list, since the incoming string
         # might have a single element only.
+        temp_value = []
         if not isinstance(value_string, list):
-            temp_value = []
             for value in value_string.split(delimiter):
                 if casefold:
                     value = value.casefold()
                 temp_value.append(value)
         else:
             if casefold:
-                temp_value = []
                 for value in value_string:
                     temp_value.append(value.casefold())
 
-    except BaseException as ex: # pylint: disable=broad-except
+    except BaseException as ex:
         logger.warning('Exception while parsing a string array: %s', ex)
         temp_value = default
     return temp_value
 
 # 30 - Docker Secrets
-def get_env_or_secret(variable, default, treat_empty_as_none: bool = True):
+
+
+def get_env_or_secret(variable: str, default: str, treat_empty_as_none: bool = True) -> str:
     """Given a variable name, returns the Environment or File variant of the variable.
     If both are None, returns default.
 
@@ -174,8 +190,9 @@ def get_env_or_secret(variable, default, treat_empty_as_none: bool = True):
         else:
             # Strip the whitespace
             value = value.strip()
-    except BaseException as ex: # pylint: disable=broad-except
-        logger.warning('Exception encountered getting value for %s: %s', variable, ex)
+    except BaseException as ex:
+        logger.warning(
+            'Exception encountered getting value for %s: %s', variable, ex)
         value = default
 
     # Finally, if the value is nonexistent or empty, just return the default
@@ -184,19 +201,20 @@ def get_env_or_secret(variable, default, treat_empty_as_none: bool = True):
 
     return value
 
-def _read_file(file, strip: bool = True):
+
+def _read_file(file: str, strip: bool = True) -> str:
     """Read, and optionally strip spaces from, a file."""
-    secret = None
+    secret = ''
 
     if not os.access(file, os.F_OK):
         return secret
     else:
         try:
-            with open(file) as file: # pylint: disable=unspecified-encoding
-                secret = file.read()
+            with open(file) as fileContents:
+                secret = fileContents.read()
                 if strip:
                     secret = secret.strip()
-        except BaseException as ex: # pylint: disable=broad-except
+        except BaseException as ex:
             logger.warning('Exception encountered reading file: %s', ex)
-
+            secret = ''
     return secret

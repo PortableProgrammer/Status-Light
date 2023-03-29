@@ -1,5 +1,5 @@
 """Status-Light
-(c) 2020-2022 Nick Warner
+(c) 2020-2023 Nick Warner
 https://github.com/portableprogrammer/Status-Light/
 
 Tuya Target
@@ -18,31 +18,17 @@ from utility import env
 
 logger = logging.getLogger(__name__)
 
+
 class TuyaLight:
-    device = ''
+    device: dict
 
     def turn_on(self):
-        return self.set_single_state(1, True)
+        return self._set_status({'1': True})
 
     def turn_off(self):
-        return self.set_single_state(1, False)
+        return self._set_status({'1': False})
 
-    def set_single_state(self, index, value, retry: int = 5):
-        # We sometimes get a connection reset, or other errors, so let's retry after a second
-        count = 0
-        status = None
-        while (status is None and count < retry):
-            try:
-                status = tuyaface.set_status(self.device, {index: value})
-            except (SystemExit, KeyboardInterrupt):
-                count = retry # Break the loop
-            except BaseException as ex: # pylint: disable=broad-except
-                logger.warning('Exception sending to Tuya device: %s', ex)
-                count = count + 1
-                time.sleep(1)
-        return status
-
-    def set_state(self, mode = 'white', color = 'ffffff', brightness: int = 128):
+    def set_status(self, mode='white', color='ffffff', brightness: int = 128):
         # DPS:
         # 1: Power, bool
         # 2: Mode, 'white' or 'colour'
@@ -57,19 +43,41 @@ class TuyaLight:
         # Brightness should be next
         # Color must be before Mode
 
-        # The code below is the probable cause of #2.
-        # Upgrading the tuya client via #36 might help fix it.
-        self.turn_on()
-        self.set_single_state(3, brightness)
-        self.set_single_state(5, color)
-        self.set_single_state(2, mode)
+        dps: dict = {
+            '1': True,
+            '3': brightness,
+            '5': color,
+            '2': mode
+        }
 
+        return_vaue = self._set_status(dps)
+        return return_vaue
+
+    def _set_status(self, dps: dict, retry: int = 5):
+        # We sometimes get a connection reset, or other errors, so let's retry after a second
+        count = 0
+        status = False
+        while (status is False and count < retry):
+            try:
+                status = tuyaface.set_status(self.device, dps)
+            except (SystemExit, KeyboardInterrupt):
+                count = retry  # Break the loop
+            except BaseException as ex:
+                logger.warning('Exception sending to Tuya device: %s', ex)
+                count = count + 1
+                time.sleep(1)
+
+        # Still some strangeness; reusing the built-in connection in the "tuyaface" key
+        #   causes a broken pipe error.
+        #   Remove the "tuyaface" key to force a new connection
+        self.device.pop('tuyaface')
+        return status
 
     def get_status(self):
         return tuyaface.status(self.device)
 
     def transition_status(self, status: enum.Status, environment: env.Environment):
-        #43: Coalesce the statuses and only execute setState once.
+        # 43: Coalesce the statuses and only execute setState once.
         # This will still allow a single status to be in more than one list,
         # but will not cause the light to rapidly switch between states.
         color = None
@@ -84,12 +92,14 @@ class TuyaLight:
             color = environment.busy_color
 
         if color is not None:
-            self.set_state('colour', color, environment.tuya_brightness)
+            self.set_status('colour', color, environment.tuya_brightness)
         # OffStatus has the lowest priority, so only check it if none of the others are valid
         elif status in environment.off_status:
             self.turn_off()
         # In the case that we made it here without a valid state,
         # just turn the light off and warn about it
+        # 74: Log enums as names, not values
         else:
-            logger.warning('Called with an invalid status: %s',status)
+            logger.warning('Called with an invalid status: %s',
+                           status.name.lower())
             self.turn_off()
