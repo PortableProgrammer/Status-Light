@@ -143,6 +143,8 @@ logger.debug('Retrieved TUYA_DEVICE variable: %s', light.device)
 # light.getCurrentStatus()
 
 outside_hours = False
+# Init to True so we don't panic the first time
+lastTransitionResult = True
 while shouldContinue:
     try:
         # Decide if we need to poll at this time
@@ -219,23 +221,39 @@ while shouldContinue:
                                  googleStatus.name.lower())
                     currentStatus = googleStatus
 
+            statusChanged = False
             if lastStatus != currentStatus:
                 lastStatus = currentStatus
+                statusChanged = True
 
+            if statusChanged:
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
                       'Found new status:', currentStatus.name.lower(), flush=True)
+
+            if not lastTransitionResult:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                      'Last attempt to set status failed. Retrying.', flush=True)
+
+            # If status changed this loop
+            # 40: or the last transition failed,
+            if statusChanged or not lastTransitionResult:
                 # 74: Log enums as names, not values
                 logger.info('Transitioning to %s', currentStatus.name.lower())
-                light.transition_status(currentStatus, localEnv)
+                lastTransitionResult = light.transition_status(currentStatus, localEnv)
 
         else:
-            if outside_hours:
-                logger.debug('Already transitioned to off, doing nothing')
-            else:
+            if not outside_hours:
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
                       'Outside of active hours, transitioning to off', flush=True)
                 logger.info('Outside of active hours, transitioning to off')
-                light.turn_off()
+                lastTransitionResult = light.turn_off()
+
+            # 40: If the last transition failed, try again
+            if not lastTransitionResult:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                      'Last attempt to turn off the light failed. Retrying.', flush=True)
+                lastTransitionResult = light.turn_off()
+
             outside_hours = True
 
         # Sleep for a few seconds

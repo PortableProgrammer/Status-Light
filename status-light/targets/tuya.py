@@ -66,7 +66,7 @@ class TuyaLight:
                 logger.warning('Exception sending to Tuya device: %s', ex)
                 count = count + 1
                 time.sleep(1)
-
+        
         # Still some strangeness; reusing the built-in connection in the "tuyaface" key
         #   causes a broken pipe error.
         #   Remove the "tuyaface" key to force a new connection
@@ -76,11 +76,12 @@ class TuyaLight:
     def get_status(self):
         return tuyaface.status(self.device)
 
-    def transition_status(self, status: enum.Status, environment: env.Environment):
+    def transition_status(self, status: enum.Status, environment: env.Environment) -> bool:
         # 43: Coalesce the statuses and only execute setState once.
         # This will still allow a single status to be in more than one list,
         # but will not cause the light to rapidly switch between states.
         color = None
+        return_value = False
 
         if status in environment.available_status:
             color = environment.available_color
@@ -92,14 +93,16 @@ class TuyaLight:
             color = environment.busy_color
 
         if color is not None:
-            self.set_status('colour', color, environment.tuya_brightness)
+            return_value = self.set_status('colour', color, environment.tuya_brightness)
         # OffStatus has the lowest priority, so only check it if none of the others are valid
         elif status in environment.off_status:
-            self.turn_off()
+            return_value = self.turn_off()
         # In the case that we made it here without a valid state,
         # just turn the light off and warn about it
         # 74: Log enums as names, not values
         else:
             logger.warning('Called with an invalid status: %s',
                            status.name.lower())
-            self.turn_off()
+            return_value = self.turn_off()
+
+        return return_value
