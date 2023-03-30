@@ -88,7 +88,7 @@ class SlackAPI:
                 return enum.Status.UNKNOWN
 
             # Join the emoji and text with a space
-            custom_status = (user_info['profile']['status_emoji'] + ' '
+            custom_status: str = (user_info['profile']['status_emoji'] + ' '
                              + user_info['profile']['status_text']).casefold()
 
             # For each of the Slack custom statuses, check them in reverse precedence order
@@ -98,17 +98,14 @@ class SlackAPI:
 
             if self.custom_available_status and \
                     custom_status.startswith(tuple(self.custom_available_status)):
-
                 return_value = self.custom_available_status_map
 
             if self.custom_scheduled_status and \
                     custom_status.startswith(tuple(self.custom_scheduled_status)):
-
                 return_value = self.custom_scheduled_status_map
 
             if self.custom_busy_status and \
                     custom_status.startswith(tuple(self.custom_busy_status)):
-
                 return_value = self.custom_busy_status_map
 
             # Check for Huddle and Call
