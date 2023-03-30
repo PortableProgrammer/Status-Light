@@ -130,23 +130,24 @@ def parse_enum_list(value_string: str, value_enum: EnumType, description: str, d
 # 66 - Support Slack custom statuses
 
 
-def parse_str_array(value_string: str, default: list[str], delimiter: str = ',', casefold: bool = False) -> list[str]:
+def parse_str_array(value_string: str | list[str], default: list[str], delimiter: str = ',', casefold: bool = False) -> list[str]:
     """Given a string containing an array of strings, attempts to parse the string into an array.
     Pass casefold=True to build an array ready for case-insensitive comparison."""
     temp_value = default
     if value_string in [None, '']:
-        return temp_value
+        value_string = temp_value
 
     try:
         # Ensure that we return a true list, since the incoming string
         # might have a single element only.
-        temp_value = []
         if not isinstance(value_string, list):
+            temp_value = []
             for value in value_string.split(delimiter):
                 if casefold:
                     value = value.casefold()
                 temp_value.append(value)
         else:
+            temp_value = []
             if casefold:
                 for value in value_string:
                     temp_value.append(value.casefold())
