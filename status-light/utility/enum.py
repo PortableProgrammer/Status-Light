@@ -59,6 +59,19 @@ class Color(enum.StrEnum):
     ORANGE = 'ff9000'
     GREEN = '00ff00'
     BLUE = '0000ff'
+    WHITE = 'ffffff'
+
+    @classmethod
+    def _missing_(cls, value):
+        return cls.UNKNOWN
+
+
+class TuyaMode(enum.StrEnum):
+    """Tuya Modes"""
+    UNKNOWN = 'xxxxxx'
+
+    WHITE = 'white'
+    COLOR = 'colour'
 
     @classmethod
     def _missing_(cls, value):

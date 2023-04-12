@@ -240,8 +240,7 @@ class StatusLight:
                         # 74: Log enums as names, not values
                         logger.info('Transitioning to %s',
                                     self.current_status.name.lower())
-                        last_transition_result = self.light.transition_status(
-                            self.current_status, self.local_env)
+                        last_transition_result = self._transition_status()
 
                 else:
                     logger.debug('Outside Active Hours, pausing')
@@ -269,6 +268,40 @@ class StatusLight:
 
         logger.debug('Turning light off')
         self.light.off()
+
+    def _transition_status(self) -> bool:
+        """Internal Helper Method to determine the correct color for the light
+        and transition to it."""
+        # 43: Coalesce the statuses and only execute setState once.
+        # This will still allow a single status to be in more than one list,
+        # but will not cause the light to rapidly switch between states.
+        color = None
+        return_value = False
+
+        if self.current_status in self.local_env.available_status:
+            color = self.local_env.available_color
+
+        if self.current_status in self.local_env.scheduled_status:
+            color = self.local_env.scheduled_color
+
+        if self.current_status in self.local_env.busy_status:
+            color = self.local_env.busy_color
+
+        if color is not None:
+            return_value = self.light.set_status(
+                enum.TuyaMode.COLOR, color, self.local_env.tuya_brightness)
+        # OffStatus has the lowest priority, so only check it if none of the others are valid
+        elif self.current_status in self.local_env.off_status:
+            return_value = self.light.off()
+        # In the case that we made it here without a valid state,
+        # just turn the light off and warn about it
+        # 74: Log enums as names, not values
+        else:
+            logger.warning('Called with an invalid status: %s',
+                           self.current_status.name.lower())
+            return_value = self.light.off()
+
+        return return_value
 
 
 # Globals
