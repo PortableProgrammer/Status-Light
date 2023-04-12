@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class Environment:
     """Represents a structured set of environment variables passed to the application."""
-    tuya_device: dict = dict()
+    tuya_device: dict = {}
     tuya_brightness: int = 128
 
     # 32 - SOURCES variable default is wrong
@@ -149,16 +149,15 @@ class Environment:
         self.slack_available_status = util.parse_str_array(
             os.environ.get('SLACK_AVAILABLE_STATUS', ''),
             self.slack_available_status, casefold=True)
-        self.slack_busy_status = util.parse_str_array(os.environ.get('SLACK_BUSY_STATUS',
-                                                                     ''),
-                                                      self.slack_busy_status, casefold=True)
-        self.slack_off_status = util.parse_str_array(os.environ.get('SLACK_OFF_STATUS',
-                                                                    ''),
-                                                     self.slack_off_status, casefold=True)
-        self.slack_scheduled_status = util.parse_str_array(os.environ.get('SLACK_SCHEDULED_STATUS',
-                                                                          ''),
-                                                           self.slack_scheduled_status,
-                                                           casefold=True)
+        self.slack_busy_status = util.parse_str_array(
+            os.environ.get('SLACK_BUSY_STATUS', ''),
+            self.slack_busy_status, casefold=True)
+        self.slack_off_status = util.parse_str_array(
+            os.environ.get('SLACK_OFF_STATUS', ''),
+            self.slack_off_status, casefold=True)
+        self.slack_scheduled_status = util.parse_str_array(
+            os.environ.get('SLACK_SCHEDULED_STATUS', ''),
+            self.slack_scheduled_status, casefold=True)
         return ('' not in [self.slack_user_id, self.slack_bot_token])
 
     def get_office(self) -> bool:
@@ -167,8 +166,7 @@ class Environment:
         self.office_app_id = util.get_env_or_secret('O365_APPID', '')
         # 30: This variable could contain secrets
         self.office_app_secret = util.get_env_or_secret('O365_APPSECRET', '')
-        self.office_token_store = os.environ.get(
-            'O365_TOKENSTORE', self.office_token_store)
+        self.office_token_store = os.environ.get('O365_TOKENSTORE', self.office_token_store)
         return ('' not in [self.office_app_id, self.office_app_secret, self.office_token_store])
 
     # 47: Add Google support
