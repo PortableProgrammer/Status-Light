@@ -72,7 +72,8 @@ class StatusLight:
         if enum.StatusSource.WEBEX in self.local_env.selected_sources:
             if self.local_env.get_webex():
                 logger.info('Requested Webex')
-                self.webex_api.botID = self.local_env.webex_bot_id
+                self.webex_api.bot_id = self.local_env.webex_bot_id
+                self.webex_api.person_id = self.local_env.webex_person_id
             else:
                 logger.error(
                     'Requested Webex, but could not find all environment variables!')
@@ -160,8 +161,7 @@ class StatusLight:
 
                     # Webex Status
                     if enum.StatusSource.WEBEX in self.local_env.selected_sources:
-                        webex_status = self.webex_api.get_person_status(
-                            self.local_env.webex_person_id)
+                        webex_status = self.webex_api.get_person_status()
                         logger_string += \
                             logger_format.format(enum.StatusSource.WEBEX.name.capitalize(),
                                                  webex_status.name.lower())

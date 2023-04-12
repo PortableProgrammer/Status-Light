@@ -19,15 +19,16 @@ logger = logging.getLogger(__name__)
 
 class WebexAPI:
     """Wraps the `webexteamssdk.WebexTeamsAPI` class"""
-    botID = ''
+    bot_id = ''
+    person_id: str = ''
 
-    def get_person_status(self, person_id: str) -> enum.Status:
-        """Retrieves the Webex Teams status for a given `person_id`"""
-        api = WebexTeamsAPI(access_token=self.botID)
+    def get_person_status(self) -> enum.Status:
+        """Retrieves the Webex Teams status for the defined `person_id`"""
+        api = WebexTeamsAPI(access_token=self.bot_id)
         return_value = enum.Status.UNKNOWN
         try:
             return_value = enum.Status[api.people.get(
-                person_id).status.lower()]
+                self.person_id).status.lower()]
         except (SystemExit, KeyboardInterrupt):
             pass
         except Exception as ex: # pylint: disable=broad-except
