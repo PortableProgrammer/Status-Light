@@ -10,7 +10,7 @@ By default, `call`, `meeting`, `donotdisturb`, or `presenting` collaboration sta
 
 ``` shell
 SOURCES=webex \
-TUYA_DEVICE="{ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }" \
+TUYA_DEVICE='{ "protocol": "3.3", "deviceid": "xxx", "ip": "yyy", "localkey": "zzz" }' \
 WEBEX_PERSONID=xxx \
 WEBEX_BOTID=xxx \
 python -u /path/to/src/status-light.py
@@ -24,7 +24,7 @@ python -u /path/to/src/status-light.py
 docker run -d \
   --name status-light \
   -e "SOURCES=webex" \
-  -e "TUYA_DEVICE={ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }" \
+  -e 'TUYA_DEVICE={ "protocol": "3.3", "deviceid": "xxx", "ip": "yyy", "localkey": "zzz" }' \
   -e "WEBEX_PERSONID=xxx" \
   -e "WEBEX_BOTID=xxx" \
   portableprogrammer/status-light:latest
@@ -47,7 +47,7 @@ services:
       - "SCHEDULED_STATUS=busy,tentative"
       - "BUSY_STATUS=call,donotdisturb,meeting,presenting,pending"
       - "OFF_STATUS=inactive,outofoffice,free,unknown"
-      - "TUYA_DEVICE={ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }"
+      - 'TUYA_DEVICE={ "protocol": "3.3", "deviceid": "xxx", "ip": "yyy", "localkey": "zzz" }'
       - "TUYA_BRIGHTNESS=128"
       - "WEBEX_PERSONID=xxx"
       - "WEBEX_BOTID=xxx"
@@ -66,7 +66,7 @@ services:
       - "ACTIVE_HOURS_START=08:00:00"
       - "ACTIVE_HOURS_END=17:00:00"
       - "SLEEP_SECONDS=5"
-      - "LOGLEVEL=WARNING"
+      - "LOGLEVEL=INFO"
     volumes:
       - type: bind
         source: /path/to/tokenstore
@@ -129,6 +129,7 @@ secrets:
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
 
 ---
+
 ### **Statuses**
 
 - *Optional*
@@ -233,6 +234,7 @@ While Slack only offers the `active` and `inactive` presence flags, it also offe
 
 These options accept a list of strings that should match the beginning of the Slack custom status.
 Take the following scenario:
+
 ```python
 SLACK_BUSY_STATUS = [':no_entry_sign: Do Not Disturb']
 BUSY_STATUS = [CALL, DONOTDISTURB, MEETING, PRESENTING, PENDING]
@@ -240,19 +242,23 @@ AVAILABLE_STATUS = ACTIVE
 slack.Presence = ACTIVE
 slack.CustomStatus = ':no_entry_sign: Do not disturb, I need to finish project X today!'
 ```
+
 In the example above, the Slack custom status would match (since it is a case-insensitive comparison), and therefore take precedence over the Slack presence, causing Status-Light to treat Slack as `BUSY` instead of `AVAILABLE`.
 
 #### `SLACK_CUSTOM_AVAILABLE_STATUS`
+
 - *Optional*, case-insensitive
 - Default value: `''`
-- Slack's `active` presence lines up nicely with the default [`AVAILABLE_STATUS`](#availablestatus), so there is no default custom override for this option.
+- Slack's `active` presence lines up nicely with the default [`AVAILABLE_STATUS`](README.md#availablestatus), so there is no default custom override for this option.
 
 #### `SLACK_CUSTOM_SCHEDULED_STATUS`
+
 - *Optional*, case-insensitive
 - Default value: `':spiral_calendar_pad: In a meeting'`
-- If you have a calendaring source configured in Slack but not in Status-Light, this default [`SCHEDULED_STATUS`](#scheduledstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
+- If you have a calendaring source configured in Slack but not in Status-Light, this default [`SCHEDULED_STATUS`](README.md#scheduledstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
 
 #### `SLACK_CUSTOM_BUSY_STATUS`
+
 - *Optional*, case-insensitive
 - Default value: `':no_entry_sign:',':no_entry: Do not disturb'`
 - This custom status also includes Slack A/V collaboration modes by default, like [Huddles](https://slack.com/help/articles/4402059015315-Use-huddles-in-Slack) and [Calls](https://slack.com/help/articles/216771908-Make-calls-in-Slack).
@@ -262,9 +268,10 @@ In the example above, the Slack custom status would match (since it is a case-in
 **Note 2:** Slack, by default, will not automatically change your custom status when you join a Call or Huddle, if you already have one set. In this instance, Status-Light will react to your existing custom status and other Source statuses.
 
 #### `SLACK_CUSTOM_OFF_STATUS`
+
 - *Optional*, case-insensitive
 - Default value: `':no_entry: Out of office',':airplane:',':palm_tree: vacationing'`
-- If you have a calendaring source configured in Slack but not in Status-Light, this default [`OFF_STATUS`](#offstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
+- If you have a calendaring source configured in Slack but not in Status-Light, this default [`OFF_STATUS`](README.md#offstatus) is an easy way to obtain both collaboration and calendar status from a single source. If you also have the same calendaring source configured in Status-Light, this will duplicate it, assuming that they're fully in sync.
 
 ---
 
@@ -292,6 +299,7 @@ In the example above, the Slack custom status would match (since it is a case-in
 - Default value: `red`
 
 ---
+
 ### **Tuya**
 
 #### `TUYA_DEVICE`
@@ -304,10 +312,12 @@ Status-Light uses the [tuyaface](https://github.com/TradeFace/tuyaface/) module 
 
 To retreive your `TUYA_DEVICE` credentials, follow [codetheweb's](https://github.com/codetheweb) [setup document](https://github.com/codetheweb/tuyapi/blob/master/docs/SETUP.md) for [tuyapi](https://github.com/codetheweb/tuyapi).
 
+Status-Light expects a valid JSON object in this variable. Specifically, attribute names (e.g. `protocol`) must be in double quotes. This may mean you need to use single quotes to surround the entire variable. See the example below.
+
 Example `TUYA_DEVICE` value:
 
 ``` shell
-"TUYA_DEVICE={ 'protocol': '3.3', 'deviceid': 'xxx', 'ip': 'xxx', 'localkey': 'xxx' }"
+'TUYA_DEVICE={ "protocol": "3.3", "deviceid": "xxx", "ip": "yyy", "localkey": "zzz" }'
 ```
 
 **Docker Secrets:** This variable can instead be specified in a secrets file, using the `TUYA_DEVICE_FILE` variable.
@@ -323,6 +333,7 @@ Example `TUYA_DEVICE` value:
 Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100% (though Tuya lights typically don't accept a brightness value below `32`). Status-Light defaults to 50% brightness, `128`.
 
 ---
+
 ### **Webex**
 
 #### `WEBEX_PERSONID`
@@ -347,6 +358,7 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
 **Docker Secrets:** These variables can instead be specified in secrets files, using the `WEBEX_PERSONID_FILE` and `WEBEX_BOTID_FILE` variables.
 
 ---
+
 ### **Slack**
 
 #### `SLACK_USER_ID`
@@ -359,7 +371,7 @@ To retrieve your `WEBEX_PERSONID` and `WEBEX_BOTID` creds, see below:
 
 - *Required if `slack` is present in [`SOURCES`](#sources)*
 
-To retrieve your `SLACK_BOT_TOKEN`, see below: 
+To retrieve your `SLACK_BOT_TOKEN`, see below:
 
 - Easy: Slack App Tutorial
   - <https://github.com/slackapi/python-slack-sdk/tree/main/tutorial>
@@ -375,6 +387,7 @@ To retrieve your `SLACK_BOT_TOKEN`, see below:
 **Note:** The `SLACK_BOT_TOKEN` is Workspace-specific, meaning you will need to create a new bot for each Slack Workspace.
 
 ---
+
 ### **Office 365**
 
 #### `O365_APPID`
@@ -400,13 +413,14 @@ Defines a writable location on disk where the Office 365 tokens are stored. This
 **Note:** This path is directory only. The python-o365 module will expect to persist a file within the directory supplied.
 
 ---
+
 ### **Google**
 
 #### `GOOGLE_CREDENTIALSTORE`
 
 - *Optional, only valid if `google` is present in [`SOURCES`](#sources)*
 - Acceptable value: Any writable location on disk, e.g. `/path/to/creds/`
-- Default value: _preconfigured key_
+- Default value: *preconfigured key*
 
 Defines a writable location on disk where the Google application credentials are stored. This location should be protected from other users.
 
@@ -423,6 +437,7 @@ Status-Light is preconfigured with a Google API key that allows `freebusy` acces
 Defines a writable location on disk where the Google tokens are stored. This location should be protected from other users.
 
 ##### **Authorizing Status-Light**
+
 If you are running Status-Light locally, the first time the authentication flow runs, you will see a Google authentication prompt in your default browser, and responding to it should authorize Status-Light successfully, storing `token.json` in the directory specified here.
 
 Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-oauth-flows-safer.html#instructions-oob) OOB authentication flows for headless devices, if you are running Status-Light headless (e.g. in a Docker container), you will need to obtain your `token.json` file manually and place it into the directory specified here.
@@ -430,7 +445,9 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 **Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
 
 ---
+
 ### **Active Times**
+
 If you prefer to leave Status-Light running all the time (e.g. headless in a Docker container), you may wish to disable status polling during off hours.
 
 **Note:** This implementation is fairly basic, assuming that active hours are identical on all active days, and that the active hours will start and end on the same day. This may preclude, for example, configuring active hours that span days (e.g. overnights) or differing schedules on specific days.
@@ -462,6 +479,7 @@ A time, in 24-hour format, signifying the start and end of the active hours on a
   - `ACTIVE_HOURS_END`: `23:59:59`
 
 ---
+
 ### `SLEEP_SECONDS`
 
 - *Optional*
@@ -471,6 +489,7 @@ A time, in 24-hour format, signifying the start and end of the active hours on a
 Set the number of seconds between status checks.
 
 ---
+
 ### `LOGLEVEL`
 
 - *Optional*
@@ -480,6 +499,8 @@ Set the number of seconds between status checks.
   - `WARNING`
   - `INFO`
   - `DEBUG`
-- Default value: `WARNING`
+- Default value: `INFO`
 
 Sets the log level for Status-Light.
+
+**Note:** Setting `LOGLEVEL` to anything above `INFO` may cause you to lose status information. It is recommended you keep this at `INFO` until you are comfortable with the configuration.

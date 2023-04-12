@@ -7,6 +7,7 @@ Environment Variable Management
 
 # Standard imports
 from datetime import datetime, time
+import json
 import os
 import logging
 
@@ -18,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class Environment:
-    tuya_device: str = ''
+    """Represents a structured set of environment variables passed to the application."""
+    tuya_device: dict = dict()
     tuya_brightness: int = 128
 
     # 32 - SOURCES variable default is wrong
@@ -37,7 +39,8 @@ class Environment:
         ':no_entry: Out of Office', ':airplane:', ':palm_tree: Vacationing']
     slack_available_status: list[str] = ['']
     slack_scheduled_status: list[str] = [':spiral_calendar_pad: In a meeting']
-    slack_busy_status: list[str] = [':no_entry_sign:', ':no_entry: Do not Disturb']
+    slack_busy_status: list[str] = [
+        ':no_entry_sign:', ':no_entry: Do not Disturb']
 
     office_app_id: str = ''
     office_app_secret: str = ''
@@ -49,21 +52,32 @@ class Environment:
     google_token_store: str = '~'
 
     # 38 - Working Elsewhere isn't handled
-    off_status: list[enum.Status] = [enum.Status.INACTIVE, enum.Status.OUTOFOFFICE,
-                                     enum.Status.WORKINGELSEWHERE, enum.Status.UNKNOWN, enum.Status.FREE]
+    off_status: list[enum.Status] = [enum.Status.INACTIVE,
+                                     enum.Status.OUTOFOFFICE,
+                                     enum.Status.WORKINGELSEWHERE,
+                                     enum.Status.UNKNOWN,
+                                     enum.Status.FREE]
     available_status: list[enum.Status] = [enum.Status.ACTIVE]
-    scheduled_status: list[enum.Status] = [
-        enum.Status.BUSY, enum.Status.TENTATIVE]
-    busy_status: list[enum.Status] = [enum.Status.CALL, enum.Status.DONOTDISTURB,
-                                      enum.Status.MEETING, enum.Status.PRESENTING, enum.Status.PENDING]
+    scheduled_status: list[enum.Status] = [enum.Status.BUSY,
+                                           enum.Status.TENTATIVE]
+    busy_status: list[enum.Status] = [enum.Status.CALL,
+                                      enum.Status.DONOTDISTURB,
+                                      enum.Status.MEETING,
+                                      enum.Status.PRESENTING,
+                                      enum.Status.PENDING]
 
     available_color: str = enum.Color.GREEN.value
     scheduled_color: str = enum.Color.ORANGE.value
     busy_color: str = enum.Color.RED.value
 
     # 45 - Add support for active hours
-    active_days: list[enum.Weekday] = [enum.Weekday.SUNDAY, enum.Weekday.MONDAY, enum.Weekday.TUESDAY,
-                                       enum.Weekday.WEDNESDAY, enum.Weekday.THURSDAY, enum.Weekday.FRIDAY, enum.Weekday.SATURDAY]
+    active_days: list[enum.Weekday] = [enum.Weekday.SUNDAY,
+                                       enum.Weekday.MONDAY,
+                                       enum.Weekday.TUESDAY,
+                                       enum.Weekday.WEDNESDAY,
+                                       enum.Weekday.THURSDAY,
+                                       enum.Weekday.FRIDAY,
+                                       enum.Weekday.SATURDAY]
     active_hours_start: time = time(hour=0, minute=0, second=0)
     active_hours_end: time = time(hour=23, minute=59, second=59)
 
@@ -71,13 +85,15 @@ class Environment:
     sleep_seconds: int = 5
 
     # 23 - Make logging level configurable
-    log_level: enum.LogLevel = enum.LogLevel.WARNING
+    log_level: enum.LogLevel = enum.LogLevel.INFO
 
     def get_sources(self) -> bool:
+        """Retrieves and validates the `SOURCES` variable."""
         # 32 - SOURCES variable default is wrong
         self.selected_sources = util.parse_enum_list(os.environ.get('SOURCES'),  # type: ignore
-                                                     enum.StatusSource, 'SOURCES', self.selected_sources)
-        return_value = (None is not self.selected_sources)
+                                                     enum.StatusSource, 'SOURCES',
+                                                     self.selected_sources)
+        return_value = None is not self.selected_sources
         # 34 - Better environment variable errors
         # SOURCES is required
         if not return_value:
@@ -85,9 +101,17 @@ class Environment:
         return return_value
 
     def get_tuya(self) -> bool:
+        """Retrieves and validates the `TUYA_*` variables."""
         return_value = True
-        # 30: This variable could contain secrets
-        self.tuya_device = util.get_env_or_secret('TUYA_DEVICE', '')
+        try:
+            # 30: This variable could contain secrets
+            self.tuya_device = json.loads(
+                util.get_env_or_secret('TUYA_DEVICE', ''))
+        except json.decoder.JSONDecodeError as ex:
+            logger.warning('Exception while getting Tuya device: %s', ex)
+            logger.exception(ex)
+            return False
+
         # 34 - Better environment variable errors
         # TUYA_DEVICE is required
         if '' in [self.tuya_device]:
@@ -106,6 +130,7 @@ class Environment:
         return return_value
 
     def get_webex(self) -> bool:
+        """Retrieves and validates the `WEBEX_*` variables."""
         # 30: This variable could contain secrets
         self.webex_person_id = util.get_env_or_secret('WEBEX_PERSONID', '')
         # 30: This variable could contain secrets
@@ -113,6 +138,7 @@ class Environment:
         return ('' not in [self.webex_person_id, self.webex_bot_id])
 
     def get_slack(self) -> bool:
+        """Retrieves and validates the `SLACK_*` variables."""
         # 30: This variable could contain secrets
         self.slack_user_id = util.get_env_or_secret('SLACK_USER_ID', '')
         # 30: This variable could contain secrets
@@ -120,17 +146,23 @@ class Environment:
         # 66: Support Slack custom statuses
         # NOTE: Since these are all optional, and at least one defaults to '',
         # they should not be checked in the return statement
-        self.slack_available_status = util.parse_str_array(os.environ.get('SLACK_AVAILABLE_STATUS', ''),
-                                                           self.slack_available_status, casefold=True)
-        self.slack_busy_status = util.parse_str_array(os.environ.get('SLACK_BUSY_STATUS', ''),
+        self.slack_available_status = util.parse_str_array(
+            os.environ.get('SLACK_AVAILABLE_STATUS', ''),
+            self.slack_available_status, casefold=True)
+        self.slack_busy_status = util.parse_str_array(os.environ.get('SLACK_BUSY_STATUS',
+                                                                     ''),
                                                       self.slack_busy_status, casefold=True)
-        self.slack_off_status = util.parse_str_array(os.environ.get('SLACK_OFF_STATUS', ''),
+        self.slack_off_status = util.parse_str_array(os.environ.get('SLACK_OFF_STATUS',
+                                                                    ''),
                                                      self.slack_off_status, casefold=True)
-        self.slack_scheduled_status = util.parse_str_array(os.environ.get('SLACK_SCHEDULED_STATUS', ''),
-                                                           self.slack_scheduled_status, casefold=True)
+        self.slack_scheduled_status = util.parse_str_array(os.environ.get('SLACK_SCHEDULED_STATUS',
+                                                                          ''),
+                                                           self.slack_scheduled_status,
+                                                           casefold=True)
         return ('' not in [self.slack_user_id, self.slack_bot_token])
 
     def get_office(self) -> bool:
+        """Retrieves and validates the `O365_*` variables."""
         # 30: This variable could contain secrets
         self.office_app_id = util.get_env_or_secret('O365_APPID', '')
         # 30: This variable could contain secrets
@@ -141,6 +173,7 @@ class Environment:
 
     # 47: Add Google support
     def get_google(self) -> bool:
+        """Retrieves and validates the `GOOGLE_*` variables."""
         self.google_credential_store = os.environ.get('GOOGLE_CREDENTIALSTORE',
                                                       self.google_credential_store)
         self.google_token_store = os.environ.get('GOOGLE_TOKENSTORE',
@@ -148,6 +181,7 @@ class Environment:
         return ('' not in [self.google_credential_store, self.google_token_store])
 
     def get_colors(self) -> bool:
+        """Retrieves and validates the `*_COLOR` variables."""
         self.available_color = util.parse_color(os.environ.get('AVAILABLE_COLOR', ''),
                                                 self.available_color)
         self.scheduled_color = util.parse_color(os.environ.get('SCHEDULED_COLOR', ''),
@@ -157,21 +191,28 @@ class Environment:
         return ('' not in [self.available_color, self.scheduled_color, self.busy_color])
 
     def get_status(self) -> bool:
+        """Retrieves and validates the `*_STATUS` variables."""
         self.off_status = util.parse_enum_list(os.environ.get('OFF_STATUS', ''),
-                                               enum.Status, 'OFF_STATUS', self.off_status)  # type: ignore
+                                               enum.Status, 'OFF_STATUS',
+                                               self.off_status)  # type: ignore
         self.available_status = util.parse_enum_list(os.environ.get('AVAILABLE_STATUS', ''),
-                                                     enum.Status, 'AVAILABLE_STATUS', self.available_status)  # type: ignore
+                                                     enum.Status, 'AVAILABLE_STATUS',
+                                                     self.available_status)  # type: ignore
         self.busy_status = util.parse_enum_list(os.environ.get('BUSY_STATUS', ''),
-                                                enum.Status, 'BUSY_STATUS', self.busy_status)  # type: ignore
+                                                enum.Status, 'BUSY_STATUS',
+                                                self.busy_status)  # type: ignore
         self.scheduled_status = util.parse_enum_list(os.environ.get('SCHEDULED_STATUS', ''),
-                                                     enum.Status, 'SCHEDULED_STATUS', self.scheduled_status)  # type: ignore
+                                                     enum.Status, 'SCHEDULED_STATUS',
+                                                     self.scheduled_status)  # type: ignore
         return ('' not in [self.off_status, self.available_status,
                            self.busy_status, self.scheduled_status])
 
     # 45 - Allow user to specify active hours
     def get_active_time(self) -> bool:
+        """Retrieves and validates the `ACTIVE_*` variables."""
         self.active_days = util.parse_enum_list(os.environ.get('ACTIVE_DAYS', ''),
-                                                enum.Weekday, 'ACTIVE_DAYS', self.active_days)  # type: ignore
+                                                enum.Weekday, 'ACTIVE_DAYS',
+                                                self.active_days)  # type: ignore
         self.active_hours_start = util.try_parse_datetime(
             os.environ.get('ACTIVE_HOURS_START', ''),
             datetime.combine(datetime.today(), self.active_hours_start)).time()
@@ -183,12 +224,15 @@ class Environment:
                            self.active_hours_end])
 
     def get_sleep(self) -> bool:
+        """Retrieves and validates the `SLEEP_SECONDS` variable."""
         # 41: Replace decorator with utility function
         self.sleep_seconds = util.try_parse_int(os.environ.get('SLEEP_SECONDS', ''),
                                                 self.sleep_seconds)
         return self.sleep_seconds >= 5 and self.sleep_seconds <= 60
 
     def get_log_level(self) -> bool:
+        """Retrieves and validates the `LOGLEVEL` variable."""
         self.log_level = util.parse_enum(os.environ.get('LOGLEVEL', ''),
-                                         enum.LogLevel, 'LOGLEVEL', self.log_level)  # type: ignore
+                                         enum.LogLevel, 'LOGLEVEL',
+                                         self.log_level)  # type: ignore
         return self.log_level != ''

@@ -20,8 +20,9 @@ class StatusSource(enum.IntEnum):
     # 48 - Add Slack suport
     SLACK = enum.auto()
 
-    def _missing(self, value):
-        return self.UNKNOWN
+    @classmethod
+    def _missing_(cls, value):
+        return cls.UNKNOWN
 
 
 class Status(enum.IntEnum):
@@ -44,8 +45,9 @@ class Status(enum.IntEnum):
     OUTOFOFFICE = enum.auto()
     WORKINGELSEWHERE = enum.auto()
 
-    def _missing_(self, value):
-        return self.UNKNOWN
+    @classmethod
+    def _missing_(cls, value):
+        return cls.UNKNOWN
 
 
 class Color(enum.StrEnum):
@@ -58,8 +60,9 @@ class Color(enum.StrEnum):
     GREEN = '00ff00'
     BLUE = '0000ff'
 
-    def _missing_(self, value):
-        return self.UNKNOWN
+    @classmethod
+    def _missing_(cls, value):
+        return cls.UNKNOWN
 
 
 class Weekday(enum.IntEnum):
@@ -74,8 +77,9 @@ class Weekday(enum.IntEnum):
 
     UNKNOWN = 7
 
-    def _missing(self, value):
-        return self.UNKNOWN
+    @classmethod
+    def _missing_(cls, value):
+        return cls.UNKNOWN
 
 
 class LogLevel(enum.IntEnum):
@@ -88,5 +92,6 @@ class LogLevel(enum.IntEnum):
 
     NOTSET = 0
 
-    def _missing(self, value):
-        return self.NOTSET
+    @classmethod
+    def _missing_(cls, value):
+        return cls.NOTSET
