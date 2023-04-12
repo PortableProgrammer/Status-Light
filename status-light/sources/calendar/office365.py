@@ -21,12 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 class OfficeAPI:
+    """Wraps the `O365.Account` class"""
     appID = ''
     appSecret = ''
     tokenStore = '~'
     account: Account
 
     def authenticate(self):
+        """Authenticates against Office 365"""
         token_backend = FileSystemTokenBackend(token_path=self.tokenStore,
                                                token_filename='o365_token.txt')
         self.account = Account((self.appID, self.appSecret),
@@ -35,14 +37,17 @@ class OfficeAPI:
             self.account.authenticate(scopes=['basic', 'calendar'])
 
     def get_schedule(self):
+        """Retrieves the current Account's Schedule"""
         self.authenticate()
         return self.account.schedule()
 
     def get_calendar(self):
+        """Retrieves the current Account's Calendar from their Schedule"""
         self.authenticate()
         return self.account.schedule().get_default_calendar()
 
     def get_current_status(self):
+        """Retrieves the Office 365 status within the next 5 minutes"""
         try:
             schedule = self.get_schedule()
             schedules = [self.account.get_current_user().mail]  # type: ignore
@@ -54,6 +59,7 @@ class OfficeAPI:
             return enum.Status[availability_view.replace(' ', '').lower()]
         except (SystemExit, KeyboardInterrupt):
             return enum.Status.UNKNOWN
-        except BaseException as ex:
+        except Exception as ex: # pylint: disable=broad-except
             logger.warning('Exception while getting Office 365 status: %s', ex)
+            logger.exception(ex)
             return enum.Status.UNKNOWN
