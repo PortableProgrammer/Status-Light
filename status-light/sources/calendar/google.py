@@ -71,7 +71,8 @@ class GoogleCalendarAPI:
         Returns the Calendar service object."""
         creds = self.authenticate()
 
-        service = build('calendar', 'v3', credentials=creds)
+        # 79 - Turn off cache_discovery, it's not supported with newer OAuth2 clients.
+        service = build('calendar', 'v3', credentials=creds, cache_discovery=False)
         return service
 
     def get_current_status(self):
