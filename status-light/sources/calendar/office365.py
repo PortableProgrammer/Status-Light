@@ -27,6 +27,9 @@ class OfficeAPI:
     tokenStore = '~'
     account: Account
 
+    # 81 - Make calendar lookahead configurable
+    lookahead: int
+
     def authenticate(self):
         """Authenticates against Office 365"""
         token_backend = FileSystemTokenBackend(token_path=self.tokenStore,
@@ -47,19 +50,22 @@ class OfficeAPI:
         return self.account.schedule().get_default_calendar()
 
     def get_current_status(self):
-        """Retrieves the Office 365 status within the next 5 minutes"""
+        """Retrieves the Office 365 status within the lookahead period"""
         try:
             schedule = self.get_schedule()
             schedules = [self.account.get_current_user().mail]  # type: ignore
             availability = schedule.get_availability(schedules, datetime.now(),
-                                                     datetime.now() + timedelta(minutes=5), 5)
+                                                     datetime.now() + timedelta(
+                                                            minutes=self.lookahead
+                                                        ),
+                                                     self.lookahead)
             availability_view = availability[0]["availabilityView"][0]
             logger.debug('Got availabilityView: %s', availability_view)
 
             return enum.Status[availability_view.replace(' ', '').lower()]
         except (SystemExit, KeyboardInterrupt):
             return enum.Status.UNKNOWN
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except
             logger.warning('Exception while getting Office 365 status: %s', ex)
             logger.exception(ex)
             return enum.Status.UNKNOWN
