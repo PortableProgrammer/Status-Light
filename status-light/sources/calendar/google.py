@@ -32,6 +32,9 @@ class GoogleCalendarAPI:
     credentialStore = '~'
     tokenStore = '~'
 
+    # 81 - Make calendar lookahead configurable
+    lookahead: int
+
     CREDENTIALS_FILENAME = 'client_secret.json'
 
     # If modifying these scopes, delete the file token.json.
@@ -77,17 +80,17 @@ class GoogleCalendarAPI:
 
     def get_current_status(self):
         """Connects to the Google Calendar API to retrieve the user's free/busy
-        status within the next 5 minutes.
+        status within the lookahead period.
 
         Returns the status returned from Google, or 'unknown' if an error occurs."""
         try:
             service = self.get_calendar_service()
             now = datetime.utcnow().isoformat() + 'Z'
-            now_plus = (datetime.utcnow() +
-                        timedelta(minutes=5)).isoformat() + 'Z'
+            now_plus_lookahead = (datetime.utcnow() +
+                        timedelta(minutes=self.lookahead)).isoformat() + 'Z'
             query = {
                 "timeMin": now,
-                "timeMax": now_plus,
+                "timeMax": now_plus_lookahead,
                 "items": [
                     {
                         "id": "primary"

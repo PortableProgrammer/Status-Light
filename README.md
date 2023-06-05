@@ -65,6 +65,7 @@ services:
       - "ACTIVE_DAYS=Monday,Tuesday,Wednesday,Thursday,Friday"
       - "ACTIVE_HOURS_START=08:00:00"
       - "ACTIVE_HOURS_END=17:00:00"
+      - "CALENDAR_LOOKAHEAD=5"
       - "SLEEP_SECONDS=5"
       - "LOGLEVEL=INFO"
     volumes:
@@ -158,13 +159,13 @@ If specificed, requires at least one of the available options. This will control
 #### `AVAILABLE_STATUS`
 
 - Default value: `active`
-- By default, denotes that there is no ongoing collaboration call or meeting, and no calendar meetings scheduled within the next `5` minutes.
+- By default, denotes that there is no ongoing collaboration call or meeting, and no calendar meetings scheduled within the configured [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) interval.
   - This is the default *not busy* state. See [`OFF_STATUS`](#off_status) for an explanation of why the calendar `free` status is not included in this list by default, and why you may want to change that.
 
 #### `SCHEDULED_STATUS`
 
 - Default value: `busy,tentative`
-- By default, denotes that there is no ongoing collaboration call or meeting, but a calendar meeting, that was either accepted or tentatively accepted, is scheduled within the next `5` minutes.
+- By default, denotes that there is no ongoing collaboration call or meeting, but a calendar meeting, that was either accepted or tentatively accepted, is scheduled within the configured [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) interval.
   - This is the default *about to be busy* state.
 
 #### `BUSY_STATUS`
@@ -183,7 +184,8 @@ If specificed, requires at least one of the available options. This will control
 - In the case of `outofoffice` and `workingelsewhere`, this is a personal preference. I don't need Status-Light to tell my family that I'm somewhere else; they can see that.
 - In the case of `free`, there are a few reasons why it's in `OFF_STATUS` by default.
   - Typically, if the user is asking for both collaboration and calendar statuses, the user will be `active` (from collaboration) and `free` (from calendar) simultaneously, so `active` will always win.
-  - Status-Light makes a  determination of `free`/`busy`/`tentative` by checking the user's availability within the next `5` minutes. There is typically no 'off-hours' status in calendaring applications, which means, at the end of the working day, the user is technically `free`. In that instance, the light would be on during off hours, showing the selected [`AVAIALBLE_COLOR`](#available_color). Again, this is a personal preference; I don't want the light on while I'm not at work, and I am using Webex to handle [`AVAILABLE_STATUS`](#available_status).
+  - Status-Light makes a determination of `free`/`busy`/`tentative` by checking the user's calendar availability within the configured [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) interval. There is typically no 'off-hours' status in calendaring applications, which means, at the end of the working day, the user is technically `free`. In that instance, the light would be on during off hours, showing the selected [`AVAIALBLE_COLOR`](#available_color). Again, this is a personal preference; I don't want the light on while I'm not at work, and I am using Webex to handle [`AVAILABLE_STATUS`](#available_status).
+  - This behavior can be further refined with the [`ACTIVE_*`](#active-times) variables.
   - In the case that no collaboration sources are present in [`SOURCES`](#sources), it is recommended to move `free` to [`AVAILABLE_STATUS`](#available_status), but the caveat above will apply in that scenario: the light may stay on all the time.
 
 **Note 1:** Status-Light makes no attempt to handle invalid values in a list. In the case of an error, Status-Light will simply revert to the default value for that list.
@@ -390,6 +392,8 @@ To retrieve your `SLACK_BOT_TOKEN`, see below:
 
 ### **Office 365**
 
+**Note:** See [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) to configure lookahead timing for Calendar sources.
+
 #### `O365_APPID`
 
 #### `O365_APPSECRET`
@@ -415,6 +419,8 @@ Defines a writable location on disk where the Office 365 tokens are stored. This
 ---
 
 ### **Google**
+
+**Note:** See [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) to configure lookahead timing for Calendar sources.
 
 #### `GOOGLE_CREDENTIALSTORE`
 
@@ -477,6 +483,16 @@ A time, in 24-hour format, signifying the start and end of the active hours on a
 - Default values:
   - `ACTIVE_HOURS_START`: `00:00:00`
   - `ACTIVE_HOURS_END`: `23:59:59`
+
+---
+
+### `CALENDAR_LOOKAHEAD`
+
+- *Optional*
+- Acceptable range: `5`-`60`
+- Default value: `5`
+
+Set the number of minutes that Calendar [`SOURCES`](#sources) lookahead to determine free/busy.
 
 ---
 

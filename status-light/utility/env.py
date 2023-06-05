@@ -81,6 +81,9 @@ class Environment:
     active_hours_start: time = time(hour=0, minute=0, second=0)
     active_hours_end: time = time(hour=23, minute=59, second=59)
 
+    # 81 - Make calendar lookahead configurable
+    calendar_lookahead: int = 5
+
     # 22 - Make sleep timeout configurable
     sleep_seconds: int = 5
 
@@ -220,6 +223,13 @@ class Environment:
 
         return ('' not in [self.active_days, self.active_hours_start,
                            self.active_hours_end])
+
+    def get_lookahead(self) -> bool:
+        """Retrieves and validates the `CALENDAR_LOOKAHEAD` variable."""
+        # 41: Replace decorator with utility function
+        self.calendar_lookahead = util.try_parse_int(os.environ.get('CALENDAR_LOOKAHEAD', ''),
+                                                self.calendar_lookahead)
+        return self.calendar_lookahead >= 5 and self.calendar_lookahead <= 60
 
     def get_sleep(self) -> bool:
         """Retrieves and validates the `SLEEP_SECONDS` variable."""

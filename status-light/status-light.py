@@ -57,6 +57,7 @@ class StatusLight:
                      self.local_env.get_colors(),
                      self.local_env.get_status(),
                      self.local_env.get_active_time(),
+                     self.local_env.get_lookahead(),
                      self.local_env.get_sleep(),
                      self.local_env.get_log_level()]:
 
@@ -106,6 +107,8 @@ class StatusLight:
                 self.office_api.appID = self.local_env.office_app_id
                 self.office_api.appSecret = self.local_env.office_app_secret
                 self.office_api.tokenStore = self.local_env.office_token_store
+                # 81 - Make calendar lookahead configurable
+                self.office_api.lookahead = self.local_env.calendar_lookahead
                 self.office_api.authenticate()
             else:
                 logger.error(
@@ -118,6 +121,8 @@ class StatusLight:
                 logger.info('Requested Google')
                 self.google_api.credentialStore = self.local_env.google_credential_store
                 self.google_api.tokenStore = self.local_env.google_token_store
+                # 81 - Make calendar lookahead configurable
+                self.google_api.lookahead = self.local_env.calendar_lookahead
             else:
                 logger.error(
                     'Requested Google, but could not find all environment variables!')
