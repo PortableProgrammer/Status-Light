@@ -32,13 +32,9 @@ jobs:
             TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest"
           fi
 
-          echo ::set-output name=docker_image::${DOCKER_IMAGE}
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
-            --build-arg VERSION=${VERSION} \
-            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-            --build-arg VCS_REF=${GITHUB_SHA::8} \
-            ${TAGS} --file ./Dockerfiles/Dockerfile ./
+          echo "docker_image=${DOCKER_IMAGE}" >> "$GITHUB_ENV"
+          echo "version=${VERSION}" >> "$GITHUB_ENV"
+          echo "buildx_args=--platform ${DOCKER_PLATFORMS} --build-arg VERSION=${VERSION} --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=${GITHUB_SHA::8} ${TAGS} --file ./Dockerfiles/Dockerfile ./" >> "$GITHUB_ENV"
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -48,7 +44,7 @@ jobs:
       -
         name: Docker Buildx (build)
         run: |
-          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
+          docker buildx build --output "type=image,push=false" ${{ env.buildx_args }}
       -
         name: Docker Login
         if: success() && github.event_name != 'pull_request'
@@ -61,12 +57,12 @@ jobs:
         name: Docker Buildx (push)
         if: success() && github.event_name != 'pull_request'
         run: |
-          docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
+          docker buildx build --output "type=image,push=true" ${{ env.buildx_args }}
       -
         name: Docker Check Manifest
         if: always() && github.event_name != 'pull_request'
         run: |
-          docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
+          docker run --rm mplatform/mquery ${{ env.docker_image }}:${{ env.version }}
       -
         name: Clear
         if: always() && github.event_name != 'pull_request'
