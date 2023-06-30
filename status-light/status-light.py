@@ -26,6 +26,9 @@ from utility import enum, env, util
 
 class StatusLight:
     """Provides a structured entry point for the Status-Light application"""
+    # Instance Logger
+    logger: logging.Logger = logging.getLogger('status-light')
+
     # Instance Properties
     local_env = env.Environment()
     current_status: enum.Status = enum.Status.UNKNOWN
@@ -62,27 +65,30 @@ class StatusLight:
                      self.local_env.get_log_level()]:
 
             # We failed to gather some environment variables
-            logger.error('Failed to find all environment variables!')
+            self.logger.error('Failed to find all environment variables!')
             sys.exit(1)
 
         # 23 - Make logging level configurable
-        logger.info('Setting log level to %s', self.local_env.log_level.name)
-        logger.setLevel(self.local_env.log_level.value)
+        self.logger.info('Setting log level to %s', self.local_env.log_level.name)
+        # Reset the root logger config to our epxected logging level
+        logging.basicConfig(format='%(asctime)s %(name)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='[%Y-%m-%d %H:%M:%S]', level=self.local_env.log_level.value, force=True)
+        self.logger.setLevel(self.local_env.log_level.value)
 
         # Depending on the selected sources, get the environment
         if enum.StatusSource.WEBEX in self.local_env.selected_sources:
             if self.local_env.get_webex():
-                logger.info('Requested Webex')
+                self.logger.info('Requested Webex')
                 self.webex_api.bot_id = self.local_env.webex_bot_id
                 self.webex_api.person_id = self.local_env.webex_person_id
             else:
-                logger.error(
+                self.logger.error(
                     'Requested Webex, but could not find all environment variables!')
                 sys.exit(1)
 
         if enum.StatusSource.SLACK in self.local_env.selected_sources:
             if self.local_env.get_slack():
-                logger.info('Requested Slack')
+                self.logger.info('Requested Slack')
                 self.slack_api.user_id = self.local_env.slack_user_id
                 self.slack_api.bot_token = self.local_env.slack_bot_token
                 # 66 - Support Slack custom statuses
@@ -97,13 +103,13 @@ class StatusLight:
                 self.slack_api.custom_scheduled_status_map = self.local_env.scheduled_status[
                     0]
             else:
-                logger.error(
+                self.logger.error(
                     'Requested Slack, but could not find all environment variables!')
                 sys.exit(1)
 
         if enum.StatusSource.OFFICE365 in self.local_env.selected_sources:
             if self.local_env.get_office():
-                logger.info('Requested Office 365')
+                self.logger.info('Requested Office 365')
                 self.office_api.appID = self.local_env.office_app_id
                 self.office_api.appSecret = self.local_env.office_app_secret
                 self.office_api.tokenStore = self.local_env.office_token_store
@@ -111,30 +117,30 @@ class StatusLight:
                 self.office_api.lookahead = self.local_env.calendar_lookahead
                 self.office_api.authenticate()
             else:
-                logger.error(
+                self.logger.error(
                     'Requested Office 365, but could not find all environment variables!')
                 sys.exit(1)
 
         # 47 - Add Google support
         if enum.StatusSource.GOOGLE in self.local_env.selected_sources:
             if self.local_env.get_google():
-                logger.info('Requested Google')
+                self.logger.info('Requested Google')
                 self.google_api.credentialStore = self.local_env.google_credential_store
                 self.google_api.tokenStore = self.local_env.google_token_store
                 # 81 - Make calendar lookahead configurable
                 self.google_api.lookahead = self.local_env.calendar_lookahead
             else:
-                logger.error(
+                self.logger.error(
                     'Requested Google, but could not find all environment variables!')
                 sys.exit(1)
 
         # Tuya
         self.light.device = self.local_env.tuya_device
-        logger.debug('Retrieved TUYA_DEVICE variable: %s', self.light.device)
+        self.logger.debug('Retrieved TUYA_DEVICE variable: %s', self.light.device)
         tuya_status = self.light.get_status()
-        logger.debug('Found initial Tuya status: %s', tuya_status)
+        self.logger.debug('Found initial Tuya status: %s', tuya_status)
         if not tuya_status:
-            logger.error(
+            self.logger.error(
                 'Could not connect to Tuya device!')
             sys.exit(1)
 
@@ -151,7 +157,7 @@ class StatusLight:
                                         self.local_env.active_hours_start,
                                         self.local_env.active_hours_end):
 
-                    logger.debug('Within Active Hours, polling')
+                    self.logger.debug('Within Active Hours, polling')
 
                     # Reset the "outside of active hours" handler
                     already_handled_inactive_hours = False
@@ -193,7 +199,7 @@ class StatusLight:
                                                  google_status.name.lower())
 
                     # 74: Log enums as names, not values
-                    logger.debug(logger_string.lstrip().rstrip(' |'))
+                    self.logger.debug(logger_string.lstrip().rstrip(' |'))
 
                     # TODO: Now that we have more than one calendar-based status source,
                     # build a real precedence module for these
@@ -204,7 +210,7 @@ class StatusLight:
                     if (webex_status == enum.Status.UNKNOWN or
                             webex_status in self.local_env.off_status):
                         # 74: Log enums as names, not values
-                        logger.debug('Using slack_status: %s',
+                        self.logger.debug('Using slack_status: %s',
                                      slack_status.name.lower())
                         # Fall through to Slack
                         self.current_status = slack_status
@@ -214,15 +220,15 @@ class StatusLight:
                         and (office_status not in self.local_env.off_status
                              or google_status not in self.local_env.off_status):
 
-                        logger.debug('Using calendar-based status')
+                        self.logger.debug('Using calendar-based status')
                         # Office should take precedence over Google for now
                         # 74: Log enums as names, not values
                         if office_status != enum.Status.UNKNOWN:
-                            logger.debug('Using office_status: %s',
+                            self.logger.debug('Using office_status: %s',
                                          office_status.name.lower())
                             self.current_status = office_status
                         else:
-                            logger.debug('Using google_status: %s',
+                            self.logger.debug('Using google_status: %s',
                                          google_status.name.lower())
                             self.current_status = google_status
 
@@ -232,26 +238,26 @@ class StatusLight:
                         status_changed = True
 
                     if status_changed:
-                        logger.info('Found new status: %s',
+                        self.logger.info('Found new status: %s',
                                     self.current_status.name.lower())
 
                     if not last_transition_result:
-                        logger.warning(
+                        self.logger.warning(
                             'Last attempt to set status failed. Retrying.')
 
                     # If status changed this loop
                     # 40: or the last transition failed,
                     if status_changed or not last_transition_result:
                         # 74: Log enums as names, not values
-                        logger.info('Transitioning to %s',
+                        self.logger.info('Transitioning to %s',
                                     self.current_status.name.lower())
                         last_transition_result = self._transition_status()
 
                 else:
-                    logger.debug('Outside Active Hours, pausing')
+                    self.logger.debug('Outside Active Hours, pausing')
 
                     if not already_handled_inactive_hours:
-                        logger.info(
+                        self.logger.info(
                             'Outside of active hours, transitioning to off')
                         last_transition_result = self.light.off()
                         self.last_status = enum.Status.UNKNOWN
@@ -264,14 +270,14 @@ class StatusLight:
                 # Sleep for a few seconds
                 time.sleep(self.local_env.sleep_seconds)
             except (SystemExit, KeyboardInterrupt) as ex:
-                logger.info('%s received; shutting down...',
+                self.logger.info('%s received; shutting down...',
                             ex.__class__.__name__)
                 self.should_continue = False
             except Exception as ex:  # pylint: disable=broad-except
-                logger.warning('Exception during main loop: %s', ex)
-                logger.exception(ex)
+                self.logger.warning('Exception during main loop: %s', ex)
+                self.logger.exception(ex)
 
-        logger.debug('Turning light off')
+        self.logger.debug('Turning light off')
         self.light.off()
 
     def _transition_status(self) -> bool:
@@ -302,7 +308,7 @@ class StatusLight:
         # just turn the light off and warn about it
         # 74: Log enums as names, not values
         else:
-            logger.warning('Called with an invalid status: %s',
+            self.logger.warning('Called with an invalid status: %s',
                            self.current_status.name.lower())
             return_value = self.light.off()
 
@@ -316,7 +322,7 @@ status_light: StatusLight = StatusLight()
 # Default to INFO level until we load the environment
 logging.basicConfig(format='%(asctime)s %(name)s.%(funcName)s %(levelname)s: %(message)s',
                     datefmt='[%Y-%m-%d %H:%M:%S]', level=logging.INFO)
-logger: logging.Logger = logging.getLogger('status-light')
+global_logger: logging.Logger = logging.getLogger('status-light')
 
 
 def receive_signal(signal_number, frame):  # pylint: disable=unused-argument
@@ -331,9 +337,9 @@ def receive_signal(signal_number, frame):  # pylint: disable=unused-argument
     try:
         signal_name = signal.Signals(signal_number).name
     except ValueError as value_ex:
-        logger.warning(
+        global_logger.warning(
             'Exception encountered converting %s to signal.Signals: %s', signal_number, value_ex)
-    logger.warning('Signal received: %s', signal_name)
+    global_logger.warning('Signal received: %s', signal_name)
     status_light.should_continue = False
 
 
@@ -342,10 +348,10 @@ def receive_signal(signal_number, frame):  # pylint: disable=unused-argument
 
 def main():
     """Provides the entry point for the application"""
-    logger.info('Startup')
+    global_logger.info('Startup')
     status_light.init()
     status_light.run()
-    logger.info('Shutdown')
+    global_logger.info('Shutdown')
 
 
 if __name__ == '__main__':

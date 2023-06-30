@@ -55,7 +55,7 @@ class SlackAPI:
                 'Slack Exception while getting user presence: %s', ex.response['error'])
             logger.exception(ex)
             return_value = enum.Status.UNKNOWN
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except
             logger.warning(
                 'Exception while getting Slack user presence: %s', ex)
             logger.exception(ex)
@@ -80,7 +80,7 @@ class SlackAPI:
                 'Slack Exception while getting user info: %s', ex.response['error'])
             logger.exception(ex)
             return None
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except
             logger.warning('Exception while getting Slack user info: %s', ex)
             logger.exception(ex)
             return None
@@ -103,25 +103,35 @@ class SlackAPI:
 
             # For each of the Slack custom statuses, check them in reverse precedence order
             # Off, Available, Scheduled, Busy
-            if self.custom_off_status and custom_status.startswith(tuple(self.custom_off_status)):
+            if len(self.custom_off_status) > 0 and \
+                    custom_status.startswith(tuple(self.custom_off_status)):
+                logger.debug(
+                    'Custom status matched custom_off_status: %s', custom_status)
                 return_value = self.custom_off_status_map
 
-            if self.custom_available_status and \
+            if len(self.custom_available_status) > 0 and \
                     custom_status.startswith(tuple(self.custom_available_status)):
+                logger.debug(
+                    'Custom status matched custom_available_status: %s', custom_status)
                 return_value = self.custom_available_status_map
 
-            if self.custom_scheduled_status and \
+            if len(self.custom_scheduled_status) > 0 and \
                     custom_status.startswith(tuple(self.custom_scheduled_status)):
+                logger.debug(
+                    'Custom status matched custom_scheduled_status: %s', custom_status)
                 return_value = self.custom_scheduled_status_map
 
-            if self.custom_busy_status and \
+            if len(self.custom_busy_status) > 0 and \
                     custom_status.startswith(tuple(self.custom_busy_status)):
+                logger.debug(
+                    'Custom status matched custom_busy_status: %s', custom_status)
                 return_value = self.custom_busy_status_map
 
             # Check for Huddle and Call
             if user_info['profile']['huddle_state'] == 'in_a_huddle' or \
                     user_info['profile']['status_emoji'] == ':slack_call:':
-
+                logger.debug('Custom status indicates Huddle (%s) or Call (%s)',
+                             user_info['profile']['huddle_state'], custom_status)
                 return_value = enum.Status.CALL
 
         except (SystemExit, KeyboardInterrupt):
@@ -131,7 +141,7 @@ class SlackAPI:
                 'Slack Exception while parsing custom status: %s', ex.response['error'])
             logger.exception(ex)
             return_value = enum.Status.UNKNOWN
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except
             logger.warning(
                 'Exception while parsing Slack custom status: %s', ex)
             logger.exception(ex)
