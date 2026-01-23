@@ -7,7 +7,6 @@ ICS Calendar Source
 
 # Standard imports
 import os
-import os.path
 from datetime import datetime, timedelta, timezone
 import logging
 import urllib.request
@@ -160,7 +159,7 @@ class Ics:
             # Use icalevents to parse the cached file
             calendar_events = events(file=cache_path, start=start_time, end=end_time)
 
-            if not calendar_events or len(calendar_events) == 0:
+            if not calendar_events:
                 logger.debug('No events in lookahead window')
                 return enum.Status.FREE
 

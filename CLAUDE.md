@@ -46,15 +46,15 @@ There is no formal test suite, linter configuration, or build system. Developmen
 **Calendar sources** (`sources/calendar/`):
 - `office365.py` - Microsoft Graph API free/busy
 - `google.py` - Google Calendar API free/busy
-- `ics.py` - ICS file support (in development)
+- `ics.py` - ICS/iCalendar file support (RFC 5545 compliant)
 
 ### Status Precedence
 
 Status determination follows a strict hierarchy:
 1. **Source priority:** Collaboration always wins over Calendar (except UNKNOWN/OFF)
 2. **Within collaboration:** Webex > Slack
-3. **Within calendar:** Office 365 > Google
-4. **Status priority:** Busy > Scheduled > Available > Off
+3. **Within calendar:** Office 365 > Google > ICS
+4. **Status priority:** Busy > Tentative/Scheduled > Available > Off
 
 ### Key Utilities
 
@@ -62,18 +62,20 @@ Status determination follows a strict hierarchy:
 - `utility/env.py` - Environment variable parsing and validation
 - `utility/util.py` - Helper functions including `get_env_or_secret()` for Docker secrets
 
-### Output Target
+### Output Targets
 
-`targets/tuya.py` - Controls Tuya smart bulbs with retry logic and connection management.
+- `targets/tuya.py` - Controls Tuya smart bulbs with retry logic and connection management
+- `targets/virtual.py` - Virtual light for testing (logs status changes, no hardware required)
 
 ## Configuration
 
 All configuration is via environment variables (no config files). Key categories:
 
-- **Sources:** `SOURCES` (comma-separated: webex, slack, office365, google)
-- **Authentication:** Platform-specific tokens/IDs (e.g., `WEBEX_PERSONID`, `SLACK_BOT_TOKEN`, `O365_APPID`)
+- **Sources:** `SOURCES` (comma-separated: webex, slack, office365, google, ics)
+- **Target:** `TARGET` (tuya or virtual; default: tuya)
+- **Authentication:** Platform-specific tokens/IDs (e.g., `WEBEX_PERSONID`, `SLACK_BOT_TOKEN`, `O365_APPID`, `ICS_URL`)
 - **Colors:** `AVAILABLE_COLOR`, `SCHEDULED_COLOR`, `BUSY_COLOR` (predefined names or 24-bit hex)
-- **Device:** `TUYA_DEVICE` (JSON with protocol, deviceid, ip, localkey)
+- **Device:** `TUYA_DEVICE` (JSON with protocol, deviceid, ip, localkey; required only when TARGET=tuya)
 - **Behavior:** `SLEEP_SECONDS`, `CALENDAR_LOOKAHEAD`, `LOGLEVEL`, `ACTIVE_DAYS`, `ACTIVE_HOURS_*`
 
 Secrets support `*_FILE` variants for Docker secrets integration.
