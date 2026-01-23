@@ -17,7 +17,7 @@ import time
 
 # Project imports
 # 47 - Add Google support
-from sources.calendar import google, office365
+from sources.calendar import google, ics, office365
 # 48 - Add Slack support
 from sources.collaboration import slack, webex
 from targets import tuya
@@ -40,6 +40,7 @@ class StatusLight:
     slack_api: slack.SlackAPI = slack.SlackAPI()
     office_api: office365.OfficeAPI = office365.OfficeAPI()
     google_api: google.GoogleCalendarAPI = google.GoogleCalendarAPI()
+    ics_api: ics.Ics = ics.Ics()
 
     # Target Properties
     light: tuya.TuyaLight = tuya.TuyaLight()
@@ -134,6 +135,20 @@ class StatusLight:
                     'Requested Google, but could not find all environment variables!')
                 sys.exit(1)
 
+        # ICS Calendar support
+        if enum.StatusSource.ICS in self.local_env.selected_sources:
+            if self.local_env.get_ics():
+                self.logger.info('Requested ICS')
+                self.ics_api.url = self.local_env.ics_url
+                self.ics_api.cacheStore = self.local_env.ics_cache_store
+                self.ics_api.cacheLifetime = self.local_env.ics_cache_lifetime
+                # 81 - Make calendar lookahead configurable
+                self.ics_api.lookahead = self.local_env.calendar_lookahead
+            else:
+                self.logger.error(
+                    'Requested ICS, but could not find all environment variables!')
+                sys.exit(1)
+
         # Tuya
         self.light.device = self.local_env.tuya_device
         self.logger.debug('Retrieved TUYA_DEVICE variable: %s', self.light.device)
@@ -166,6 +181,7 @@ class StatusLight:
                     slack_status = enum.Status.UNKNOWN
                     office_status = enum.Status.UNKNOWN
                     google_status = enum.Status.UNKNOWN
+                    ics_status = enum.Status.UNKNOWN
 
                     logger_format = " {}: {} |"
                     logger_string = ""
@@ -198,6 +214,13 @@ class StatusLight:
                             logger_format.format(enum.StatusSource.GOOGLE.name.capitalize(),
                                                  google_status.name.lower())
 
+                    # ICS Status (based on calendar)
+                    if enum.StatusSource.ICS in self.local_env.selected_sources:
+                        ics_status = self.ics_api.get_current_status()
+                        logger_string += \
+                            logger_format.format(enum.StatusSource.ICS.name.capitalize(),
+                                                 ics_status.name.lower())
+
                     # 74: Log enums as names, not values
                     self.logger.debug(logger_string.lstrip().rstrip(' |'))
 
@@ -218,19 +241,24 @@ class StatusLight:
                     if (self.current_status in self.local_env.available_status or
                         self.current_status in self.local_env.off_status) \
                         and (office_status not in self.local_env.off_status
-                             or google_status not in self.local_env.off_status):
+                             or google_status not in self.local_env.off_status
+                             or ics_status not in self.local_env.off_status):
 
                         self.logger.debug('Using calendar-based status')
-                        # Office should take precedence over Google for now
+                        # Office should take precedence over Google, Google over ICS
                         # 74: Log enums as names, not values
                         if office_status != enum.Status.UNKNOWN:
                             self.logger.debug('Using office_status: %s',
                                          office_status.name.lower())
                             self.current_status = office_status
-                        else:
+                        elif google_status != enum.Status.UNKNOWN:
                             self.logger.debug('Using google_status: %s',
                                          google_status.name.lower())
                             self.current_status = google_status
+                        else:
+                            self.logger.debug('Using ics_status: %s',
+                                         ics_status.name.lower())
+                            self.current_status = ics_status
 
                     status_changed = False
                     if self.last_status != self.current_status:
