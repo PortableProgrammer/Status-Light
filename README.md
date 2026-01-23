@@ -328,11 +328,13 @@ In the example above, the Slack custom status would match (since it is a case-in
 
 ### **Tuya**
 
+**Note:** Tuya configuration is only required when [`TARGET`](#target) is set to `tuya` (the default). If using `TARGET=virtual`, you can skip this section.
+
 #### `TUYA_DEVICE`
 
-- *Required*
+- *Required if [`TARGET`](#target) is `tuya`*
 
-Status-Light requires a [Tuya](https://www.tuya.com/) device, which are white-boxed and sold under many brand names. For example, the Tuya light working in the current environment is an [Above Lights](http://alabovelights.com/) [Smart Bulb 9W, model AL1](http://alabovelights.com/pd.jsp?id=17).
+Status-Light supports [Tuya](https://www.tuya.com/) devices, which are white-boxed and sold under many brand names. For example, the Tuya light working in the current environment is an [Above Lights](http://alabovelights.com/) [Smart Bulb 9W, model AL1](http://alabovelights.com/pd.jsp?id=17).
 
 Status-Light uses the [tuyaface](https://github.com/TradeFace/tuyaface/) module for Tuya communication.
 
@@ -352,7 +354,7 @@ Example `TUYA_DEVICE` value:
 
 #### `TUYA_BRIGHTNESS`
 
-- *Optional*
+- *Optional, only valid if [`TARGET`](#target) is `tuya`*
 - Acceptable range: `32`-`255`
 - Default value: `128`
 
