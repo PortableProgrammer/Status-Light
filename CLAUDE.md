@@ -46,7 +46,7 @@ There is no formal test suite, linter configuration, or build system. Developmen
 **Calendar sources** (`sources/calendar/`):
 - `office365.py` - Microsoft Graph API free/busy
 - `google.py` - Google Calendar API free/busy
-- `ics.py` - ICS/iCalendar file support (RFC 5545 compliant)
+- `ics.py` - ICS/iCalendar file support (RFC 5545 compliant, uses `icalendar` + `recurring-ical-events` for proper timezone and recurring event handling)
 
 ### Status Precedence
 
@@ -86,3 +86,15 @@ GitHub Actions (`.github/workflows/docker-image.yml`) builds multi-platform Dock
 - Platforms: linux/amd64, linux/arm/v6, linux/arm/v7, linux/arm64
 - Triggers: PRs to main (build only), pushes with `v*` tags (build + push to Docker Hub)
 - Published to: `portableprogrammer/status-light`
+
+## Documentation
+
+When making changes, update documentation **before** suggesting commits:
+- `README.md` - User-facing documentation for environment variables, setup, and usage
+- `CLAUDE.md` - Developer guidance for Claude Code (this file)
+
+Keep both files in sync with code changes, especially for:
+- New or modified environment variables
+- New dependencies in `requirements.txt`
+- Architecture changes (new sources, targets, utilities)
+- Configuration options

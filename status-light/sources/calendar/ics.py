@@ -12,7 +12,8 @@ import logging
 import urllib.request
 
 # 3rd-party imports
-from icalevents.icalevents import events
+import icalendar
+import recurring_ical_events
 
 # Project imports
 from utility import enum
@@ -31,6 +32,9 @@ class Ics:
 
     # 81 - Make calendar lookahead configurable
     lookahead: int = 5
+
+    # Cached calendar object
+    _calendar: icalendar.Calendar | None = None
 
     def _get_cache_path(self) -> str:
         """Returns the full path to the cache file."""
@@ -89,6 +93,9 @@ class Ics:
             with open(cache_path, 'wb') as cache_file:
                 cache_file.write(ics_content)
 
+            # Invalidate cached calendar object
+            self._calendar = None
+
             logger.debug('Successfully cached ICS file to: %s', cache_path)
             return True
 
@@ -97,7 +104,23 @@ class Ics:
             logger.exception(ex)
             return False
 
-    def _get_event_status(self, event) -> enum.Status:
+    def _load_calendar(self) -> icalendar.Calendar | None:
+        """Loads and parses the cached ICS file.
+
+        Returns the calendar object or None on error."""
+        if self._calendar is not None:
+            return self._calendar
+
+        cache_path = self._get_cache_path()
+        try:
+            with open(cache_path, 'rb') as f:
+                self._calendar = icalendar.Calendar.from_ical(f.read())
+            return self._calendar
+        except Exception as ex:  # pylint: disable=broad-except
+            logger.warning('Error loading ICS file: %s', ex)
+            return None
+
+    def _get_event_status(self, event: icalendar.Event) -> enum.Status:
         """Determines the Status-Light status for a single iCal event.
 
         RFC 5545 compliant mapping based on TRANSP and STATUS properties:
@@ -106,24 +129,28 @@ class Ics:
         - STATUS=TENTATIVE → TENTATIVE (maps to BUSY-TENTATIVE in RFC terms)
         - STATUS=CONFIRMED or None → BUSY (default blocking event)
         """
+        summary = str(event.get('SUMMARY', 'Untitled'))
+
         # Transparent events don't block time (e.g., all-day reminders)
-        if event.transparent:
-            logger.debug('Event "%s" is transparent, treating as FREE', event.summary)
+        transp = str(event.get('TRANSP', 'OPAQUE')).upper()
+        if transp == 'TRANSPARENT':
+            logger.debug('Event "%s" is transparent, treating as FREE', summary)
             return enum.Status.FREE
 
         # Check the STATUS property
-        status = event.status.upper() if event.status else None
+        status = event.get('STATUS')
+        status_str = str(status).upper() if status else None
 
-        if status == 'CANCELLED':
-            logger.debug('Event "%s" is cancelled, treating as FREE', event.summary)
+        if status_str == 'CANCELLED':
+            logger.debug('Event "%s" is cancelled, treating as FREE', summary)
             return enum.Status.FREE
 
-        if status == 'TENTATIVE':
-            logger.debug('Event "%s" is tentative, treating as TENTATIVE', event.summary)
+        if status_str == 'TENTATIVE':
+            logger.debug('Event "%s" is tentative, treating as TENTATIVE', summary)
             return enum.Status.TENTATIVE
 
         # CONFIRMED or no status = BUSY (default per RFC 5545)
-        logger.debug('Event "%s" is confirmed/opaque, treating as BUSY', event.summary)
+        logger.debug('Event "%s" is confirmed/opaque, treating as BUSY', summary)
         return enum.Status.BUSY
 
     def get_current_status(self) -> enum.Status:
@@ -148,16 +175,23 @@ class Ics:
                         return enum.Status.UNKNOWN
                     logger.warning('Using stale cache file due to fetch failure')
 
-            cache_path = self._get_cache_path()
+            # Load the calendar
+            calendar = self._load_calendar()
+            if calendar is None:
+                return enum.Status.UNKNOWN
 
-            # Get events within the lookahead window
-            start_time = datetime.now(timezone.utc)
+            # Get events within the lookahead window using timezone-aware datetimes
+            # recurring-ical-events handles timezone conversion correctly
+            local_tz = datetime.now().astimezone().tzinfo
+            start_time = datetime.now(local_tz)
             end_time = start_time + timedelta(minutes=self.lookahead)
 
-            logger.debug('Checking for events between %s and %s', start_time, end_time)
+            logger.debug('Checking for events between %s and %s',
+                        start_time.strftime('%I:%M %p %Z'),
+                        end_time.strftime('%I:%M %p %Z'))
 
-            # Use icalevents to parse the cached file
-            calendar_events = events(file=cache_path, start=start_time, end=end_time)
+            # Use recurring-ical-events to expand recurring events and filter by time
+            calendar_events = recurring_ical_events.of(calendar).between(start_time, end_time)
 
             if not calendar_events:
                 logger.debug('No events in lookahead window')
@@ -170,9 +204,27 @@ class Ics:
             has_tentative = False
 
             for event in calendar_events:
-                logger.debug('Event: %s (%s - %s, transparent=%s, status=%s)',
-                            event.summary, event.start, event.end,
-                            event.transparent, event.status)
+                dtstart = event.get('DTSTART')
+                dtend = event.get('DTEND')
+                summary = str(event.get('SUMMARY', 'Untitled'))
+                transp = str(event.get('TRANSP', 'OPAQUE'))
+                status = str(event.get('STATUS', ''))
+
+                # Convert to local timezone for logging
+                start_dt = dtstart.dt if dtstart else None
+                end_dt = dtend.dt if dtend else start_dt
+                if hasattr(start_dt, 'astimezone'):
+                    start_local = start_dt.astimezone(local_tz)
+                    end_local = end_dt.astimezone(local_tz) if hasattr(end_dt, 'astimezone') else end_dt
+                else:
+                    start_local = start_dt
+                    end_local = end_dt
+
+                logger.debug('Event: %s (%s - %s, transp=%s, status=%s)',
+                            summary,
+                            start_local.strftime('%I:%M %p') if start_local else '?',
+                            end_local.strftime('%I:%M %p') if end_local else '?',
+                            transp, status)
 
                 event_status = self._get_event_status(event)
 

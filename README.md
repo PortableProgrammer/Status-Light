@@ -480,6 +480,8 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 
 **Note:** See [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) to configure lookahead timing for Calendar sources.
 
+Status-Light uses the [icalendar](https://github.com/collective/icalendar) and [recurring-ical-events](https://github.com/niccokunzmann/python-recurring-ical-events) libraries to parse ICS files. These libraries correctly handle recurring events and cross-timezone event matching (e.g., a Pacific time event will be correctly detected when running in Mountain time).
+
 Status-Light's ICS source implements RFC 5545 compliant status detection based on the `TRANSP` (transparency) and `STATUS` properties of calendar events:
 
 | Event Properties | Status-Light Status |
