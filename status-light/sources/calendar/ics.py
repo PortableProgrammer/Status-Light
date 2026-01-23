@@ -98,11 +98,46 @@ class Ics:
             logger.exception(ex)
             return False
 
+    def _get_event_status(self, event) -> enum.Status:
+        """Determines the Status-Light status for a single iCal event.
+
+        RFC 5545 compliant mapping based on TRANSP and STATUS properties:
+        - TRANSP=TRANSPARENT → FREE (event doesn't block time)
+        - STATUS=CANCELLED → FREE (event was cancelled)
+        - STATUS=TENTATIVE → TENTATIVE (maps to BUSY-TENTATIVE in RFC terms)
+        - STATUS=CONFIRMED or None → BUSY (default blocking event)
+        """
+        # Transparent events don't block time (e.g., all-day reminders)
+        if event.transparent:
+            logger.debug('Event "%s" is transparent, treating as FREE', event.summary)
+            return enum.Status.FREE
+
+        # Check the STATUS property
+        status = event.status.upper() if event.status else None
+
+        if status == 'CANCELLED':
+            logger.debug('Event "%s" is cancelled, treating as FREE', event.summary)
+            return enum.Status.FREE
+
+        if status == 'TENTATIVE':
+            logger.debug('Event "%s" is tentative, treating as TENTATIVE', event.summary)
+            return enum.Status.TENTATIVE
+
+        # CONFIRMED or no status = BUSY (default per RFC 5545)
+        logger.debug('Event "%s" is confirmed/opaque, treating as BUSY', event.summary)
+        return enum.Status.BUSY
+
     def get_current_status(self) -> enum.Status:
         """Retrieves the ICS calendar status within the lookahead period.
 
-        Returns BUSY if there are events in the lookahead window,
-        FREE if there are no events, or UNKNOWN on error."""
+        RFC 5545 compliant behavior:
+        - Returns BUSY if any confirmed opaque events exist
+        - Returns TENTATIVE if only tentative events exist
+        - Returns FREE if no blocking events exist
+        - Returns UNKNOWN on error
+
+        Status precedence: BUSY > TENTATIVE > FREE
+        """
         try:
             # Refresh cache if needed
             if self._should_refresh_cache():
@@ -125,15 +160,37 @@ class Ics:
             # Use icalevents to parse the cached file
             calendar_events = events(file=cache_path, start=start_time, end=end_time)
 
-            if calendar_events and len(calendar_events) > 0:
-                logger.debug('Found %d event(s) in lookahead window', len(calendar_events))
-                for event in calendar_events:
-                    logger.debug('Event: %s (%s - %s)',
-                                event.summary, event.start, event.end)
-                return enum.Status.BUSY
-            else:
-                logger.debug('No events in lookahead window, assuming Free')
+            if not calendar_events or len(calendar_events) == 0:
+                logger.debug('No events in lookahead window')
                 return enum.Status.FREE
+
+            logger.debug('Found %d event(s) in lookahead window', len(calendar_events))
+
+            # Determine the "busiest" status from all events
+            # Precedence: BUSY > TENTATIVE > FREE
+            has_tentative = False
+
+            for event in calendar_events:
+                logger.debug('Event: %s (%s - %s, transparent=%s, status=%s)',
+                            event.summary, event.start, event.end,
+                            event.transparent, event.status)
+
+                event_status = self._get_event_status(event)
+
+                if event_status == enum.Status.BUSY:
+                    # BUSY takes precedence, return immediately
+                    return enum.Status.BUSY
+
+                if event_status == enum.Status.TENTATIVE:
+                    has_tentative = True
+                # FREE events don't affect the result
+
+            # If we had any tentative events (but no busy), return TENTATIVE
+            if has_tentative:
+                return enum.Status.TENTATIVE
+
+            # All events were transparent or cancelled
+            return enum.Status.FREE
 
         except (SystemExit, KeyboardInterrupt):
             return enum.Status.UNKNOWN

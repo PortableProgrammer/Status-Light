@@ -40,6 +40,7 @@ services:
     image: portableprogrammer/status-light:latest
     environment:
       - "SOURCES=Webex,Office365"
+      - "TARGET=tuya"
       - "AVAILABLE_COLOR=green"
       - "SCHEDULED_COLOR=orange"
       - "BUSY_COLOR=red"
@@ -56,6 +57,9 @@ services:
       - "O365_TOKENSTORE=/data"
       - "GOOGLE_TOKENSTORE=/data"
       - "GOOGLE_CREDENTIALSTORE=/data"
+      - "ICS_URL=https://example.com/calendar.ics"
+      - "ICS_CACHESTORE=/data"
+      - "ICS_CACHELIFETIME=30"
       - "SLACK_USER_ID=xxx"
       - "SLACK_BOT_TOKEN=xxx"
       - "SLACK_CUSTOM_AVAILABLE_STATUS=''"
@@ -125,9 +129,22 @@ secrets:
   - `slack`
   - `office365`
   - `google`
+  - `ics`
 - Default value: `webex,office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
+
+---
+
+### `TARGET`
+
+- *Optional*
+- Available values:
+  - `tuya` - Physical Tuya smart bulb (requires `TUYA_DEVICE`)
+  - `virtual` - Virtual light that logs status changes (for testing)
+- Default value: `tuya`
+
+Specifies the output target for status display. Use `virtual` for testing without hardware.
 
 ---
 
@@ -154,6 +171,10 @@ If specificed, requires at least one of the available options. This will control
     - `workingelsewhere`
   - Google
     - `free`
+    - `busy`
+  - ICS
+    - `free`
+    - `tentative`
     - `busy`
 
 #### `AVAILABLE_STATUS`
@@ -204,14 +225,17 @@ if webexStatus == const.Status.unknown or webexStatus in offStatus:
   # Fall through to Slack
   currentStatus = slackStatus
 
-if (currentStatus in availableStatus or currentStatus in offStatus) 
-  and (officeStatus not in offStatus or googleStatus not in offStatus):
+if (currentStatus in availableStatus or currentStatus in offStatus)
+  and (officeStatus not in offStatus or googleStatus not in offStatus
+       or icsStatus not in offStatus):
 
-  # Office 365 currently takes precedence over Google
+  # Office 365 currently takes precedence over Google, Google over ICS
   if (officeStatus != const.Status.unknown):
     currentStatus = officeStatus
-  else:
+  elif (googleStatus != const.Status.unknown):
     currentStatus = googleStatus
+  else:
+    currentStatus = icsStatus
 
 if currentStatus in availableStatus:
   # Get availableColor
@@ -449,6 +473,54 @@ If you are running Status-Light locally, the first time the authentication flow 
 Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-oauth-flows-safer.html#instructions-oob) OOB authentication flows for headless devices, if you are running Status-Light headless (e.g. in a Docker container), you will need to obtain your `token.json` file manually and place it into the directory specified here.
 
 **Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
+
+---
+
+### **ICS**
+
+**Note:** See [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) to configure lookahead timing for Calendar sources.
+
+Status-Light's ICS source implements RFC 5545 compliant status detection based on the `TRANSP` (transparency) and `STATUS` properties of calendar events:
+
+| Event Properties | Status-Light Status |
+|-----------------|---------------------|
+| `TRANSP=TRANSPARENT` | `free` (event doesn't block time) |
+| `STATUS=CANCELLED` | `free` (event was cancelled) |
+| `STATUS=TENTATIVE` | `tentative` (maps to BUSY-TENTATIVE in RFC terms) |
+| `STATUS=CONFIRMED` or unset | `busy` (default blocking event) |
+
+When multiple events exist in the lookahead window, the "busiest" status wins: `busy` > `tentative` > `free`.
+
+#### `ICS_URL`
+
+- *Required if `ics` is present in [`SOURCES`](#sources)*
+
+The URL to an ICS (iCalendar) file. This can be any publicly accessible URL that returns a valid `.ics` file, such as:
+- A shared Google Calendar ICS link
+- An Office 365 published calendar
+- Any other iCalendar-compatible calendar export
+
+Status-Light will fetch this file periodically (controlled by `ICS_CACHELIFETIME`) and check for events within the [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) window.
+
+**Docker Secrets:** This variable can instead be specified in a secrets file, using the `ICS_URL_FILE` variable.
+
+#### `ICS_CACHESTORE`
+
+- *Optional, only valid if `ics` is present in [`SOURCES`](#sources)*
+- Acceptable value: Any writable location on disk, e.g. `/path/to/cache/`
+- Default value: `~`
+
+Defines a writable location on disk where the cached ICS file is stored.
+
+**Note:** This path is directory only. Status-Light will persist a file named `status-light-ics-cache.ics` within the directory supplied.
+
+#### `ICS_CACHELIFETIME`
+
+- *Optional, only valid if `ics` is present in [`SOURCES`](#sources)*
+- Acceptable range: `5`-`60`
+- Default value: `30`
+
+Set the number of minutes the cached ICS file remains valid before being re-fetched from the URL. A lower value means more frequent updates but more network requests.
 
 ---
 

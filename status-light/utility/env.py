@@ -56,6 +56,9 @@ class Environment:
     ics_cache_store: str = '~'
     ics_cache_lifetime: int = 30
 
+    # Target selection
+    target: str = 'tuya'
+
     # 38 - Working Elsewhere isn't handled
     off_status: list[enum.Status] = [enum.Status.INACTIVE,
                                      enum.Status.OUTOFOFFICE,
@@ -199,6 +202,14 @@ class Environment:
             logger.warning('ICS_CACHELIFETIME must be between 5 and 60 minutes!')
             self.ics_cache_lifetime = 30
         return self.ics_url != ''
+
+    def get_target(self) -> bool:
+        """Retrieves and validates the `TARGET` variable."""
+        self.target = os.environ.get('TARGET', self.target).lower()
+        if self.target not in ('tuya', 'virtual'):
+            logger.warning('TARGET must be "tuya" or "virtual"!')
+            return False
+        return True
 
     def get_colors(self) -> bool:
         """Retrieves and validates the `*_COLOR` variables."""

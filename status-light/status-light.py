@@ -20,7 +20,7 @@ import time
 from sources.calendar import google, ics, office365
 # 48 - Add Slack support
 from sources.collaboration import slack, webex
-from targets import tuya
+from targets import tuya, virtual
 from utility import enum, env, util
 
 
@@ -43,7 +43,7 @@ class StatusLight:
     ics_api: ics.Ics = ics.Ics()
 
     # Target Properties
-    light: tuya.TuyaLight = tuya.TuyaLight()
+    light: tuya.TuyaLight | virtual.VirtualLight = tuya.TuyaLight()
 
     def init(self):
         """Initializes all class and environment variables."""
@@ -57,7 +57,7 @@ class StatusLight:
 
         # Validate environment variables in a structured way
         if False in [self.local_env.get_sources(),
-                     self.local_env.get_tuya(),
+                     self.local_env.get_target(),
                      self.local_env.get_colors(),
                      self.local_env.get_status(),
                      self.local_env.get_active_time(),
@@ -149,15 +149,25 @@ class StatusLight:
                     'Requested ICS, but could not find all environment variables!')
                 sys.exit(1)
 
-        # Tuya
-        self.light.device = self.local_env.tuya_device
-        self.logger.debug('Retrieved TUYA_DEVICE variable: %s', self.light.device)
-        tuya_status = self.light.get_status()
-        self.logger.debug('Found initial Tuya status: %s', tuya_status)
-        if not tuya_status:
-            self.logger.error(
-                'Could not connect to Tuya device!')
-            sys.exit(1)
+        # Target initialization
+        if self.local_env.target == 'virtual':
+            self.logger.info('Using virtual light target')
+            self.light = virtual.VirtualLight()
+            self.light.get_status()
+        else:
+            # Tuya target (requires TUYA_DEVICE)
+            if not self.local_env.get_tuya():
+                self.logger.error(
+                    'TUYA_DEVICE is required when TARGET=tuya!')
+                sys.exit(1)
+            self.light.device = self.local_env.tuya_device
+            self.logger.debug('Retrieved TUYA_DEVICE variable: %s', self.light.device)
+            tuya_status = self.light.get_status()
+            self.logger.debug('Found initial Tuya status: %s', tuya_status)
+            if not tuya_status:
+                self.logger.error(
+                    'Could not connect to Tuya device!')
+                sys.exit(1)
 
     def run(self):
         """Runs the main loop of the application"""
