@@ -2,6 +2,7 @@ __pycache__
 *.pyc
 .vscode/
 .devcontainer/
+.claude/
 build/
 dist/
 status-light/__pycache__
