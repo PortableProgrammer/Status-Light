@@ -51,6 +51,14 @@ class Environment:
     google_credential_store: str = './utility/api/calendar/google'
     google_token_store: str = '~'
 
+    # ICS Calendar support
+    ics_url: str = ''
+    ics_cache_store: str = '~'
+    ics_cache_lifetime: int = 30
+
+    # Target selection
+    target: str = 'tuya'
+
     # 38 - Working Elsewhere isn't handled
     off_status: list[enum.Status] = [enum.Status.INACTIVE,
                                      enum.Status.OUTOFOFFICE,
@@ -180,6 +188,28 @@ class Environment:
         self.google_token_store = os.environ.get('GOOGLE_TOKENSTORE',
                                                  self.google_token_store)
         return ('' not in [self.google_credential_store, self.google_token_store])
+
+    def get_ics(self) -> bool:
+        """Retrieves and validates the `ICS_*` variables."""
+        # ICS_URL is required and may contain secrets
+        self.ics_url = util.get_env_or_secret('ICS_URL', '')
+        self.ics_cache_store = os.environ.get('ICS_CACHESTORE', self.ics_cache_store)
+        self.ics_cache_lifetime = util.try_parse_int(
+            os.environ.get('ICS_CACHELIFETIME', ''),
+            self.ics_cache_lifetime)
+        # Validate cache lifetime is within 5-60 minutes
+        if self.ics_cache_lifetime < 5 or self.ics_cache_lifetime > 60:
+            logger.warning('ICS_CACHELIFETIME must be between 5 and 60 minutes!')
+            self.ics_cache_lifetime = 30
+        return self.ics_url != ''
+
+    def get_target(self) -> bool:
+        """Retrieves and validates the `TARGET` variable."""
+        self.target = os.environ.get('TARGET', self.target).lower()
+        if self.target not in ('tuya', 'virtual'):
+            logger.warning('TARGET must be "tuya" or "virtual"!')
+            return False
+        return True
 
     def get_colors(self) -> bool:
         """Retrieves and validates the `*_COLOR` variables."""

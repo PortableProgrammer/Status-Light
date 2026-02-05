@@ -19,6 +19,8 @@ class StatusSource(enum.IntEnum):
     GOOGLE = enum.auto()
     # 48 - Add Slack suport
     SLACK = enum.auto()
+    # ICS Calendar support
+    ICS = enum.auto()
 
     @classmethod
     def _missing_(cls, value):
