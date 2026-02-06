@@ -1,5 +1,5 @@
 """Status-Light
-(c) 2020-2025 Nick Warner
+(c) 2020-2026 Nick Warner
 https://github.com/portableprogrammer/Status-Light/
 
 ICS Calendar Source
@@ -128,6 +128,13 @@ class Ics:
         - STATUS=CANCELLED → FREE (event was cancelled)
         - STATUS=TENTATIVE → TENTATIVE (maps to BUSY-TENTATIVE in RFC terms)
         - STATUS=CONFIRMED or None → BUSY (default blocking event)
+
+        Additionally handles Microsoft CDO extensions (common in Office 365/Outlook):
+        - X-MICROSOFT-CDO-BUSYSTATUS=FREE (0) → FREE
+        - X-MICROSOFT-CDO-BUSYSTATUS=TENTATIVE (1) → TENTATIVE
+        - X-MICROSOFT-CDO-BUSYSTATUS=BUSY (2) → BUSY
+        - X-MICROSOFT-CDO-BUSYSTATUS=OOF (3) → OUTOFOFFICE
+        - X-MICROSOFT-CDO-BUSYSTATUS=WORKINGELSEWHERE (4) → WORKINGELSEWHERE
         """
         summary = str(event.get('SUMMARY', 'Untitled'))
 
@@ -149,6 +156,32 @@ class Ics:
             logger.debug('Event "%s" is tentative, treating as TENTATIVE', summary)
             return enum.Status.TENTATIVE
 
+        # Check for Microsoft CDO busy status extension (common in Office 365/Outlook ICS exports)
+        # This property provides more granular status information than standard RFC 5545
+        busystatus = event.get('X-MICROSOFT-CDO-BUSYSTATUS')
+        if busystatus:
+            busystatus_str = str(busystatus).upper()
+
+            # Map numeric and string values to Status enums
+            # Office 365/Outlook uses both numeric codes and string values
+            if busystatus_str in ('0', 'FREE'):
+                logger.debug('Event "%s" has CDO busystatus FREE, treating as FREE', summary)
+                return enum.Status.FREE
+            elif busystatus_str in ('1', 'TENTATIVE'):
+                logger.debug('Event "%s" has CDO busystatus TENTATIVE, treating as TENTATIVE',
+                           summary)
+                return enum.Status.TENTATIVE
+            elif busystatus_str in ('3', 'OOF', 'OUT-OF-OFFICE'):
+                logger.debug('Event "%s" has CDO busystatus OOF, treating as OUTOFOFFICE', summary)
+                return enum.Status.OUTOFOFFICE
+            elif busystatus_str in ('4', 'WORKINGELSEWHERE', 'WORKING-ELSEWHERE'):
+                logger.debug('Event "%s" has CDO busystatus WORKINGELSEWHERE, treating as WORKINGELSEWHERE',
+                           summary)
+                return enum.Status.WORKINGELSEWHERE
+            elif busystatus_str in ('2', 'BUSY'):
+                logger.debug('Event "%s" has CDO busystatus BUSY, treating as BUSY', summary)
+                return enum.Status.BUSY
+
         # CONFIRMED or no status = BUSY (default per RFC 5545)
         logger.debug('Event "%s" is confirmed/opaque, treating as BUSY', summary)
         return enum.Status.BUSY
@@ -156,13 +189,15 @@ class Ics:
     def get_current_status(self) -> enum.Status:
         """Retrieves the ICS calendar status within the lookahead period.
 
-        RFC 5545 compliant behavior:
+        RFC 5545 compliant behavior with Microsoft CDO extensions:
         - Returns BUSY if any confirmed opaque events exist
+        - Returns OUTOFOFFICE if any OOF events exist
+        - Returns WORKINGELSEWHERE if any working-elsewhere events exist
         - Returns TENTATIVE if only tentative events exist
         - Returns FREE if no blocking events exist
         - Returns UNKNOWN on error
 
-        Status precedence: BUSY > TENTATIVE > FREE
+        Status precedence: BUSY > OUTOFOFFICE > WORKINGELSEWHERE > TENTATIVE > FREE
         """
         try:
             # Refresh cache if needed
@@ -200,7 +235,9 @@ class Ics:
             logger.debug('Found %d event(s) in lookahead window', len(calendar_events))
 
             # Determine the "busiest" status from all events
-            # Precedence: BUSY > TENTATIVE > FREE
+            # Precedence: BUSY > OUTOFOFFICE > WORKINGELSEWHERE > TENTATIVE > FREE
+            has_outofoffice = False
+            has_workingelsewhere = False
             has_tentative = False
 
             for event in calendar_events:
@@ -229,14 +266,27 @@ class Ics:
                 event_status = self._get_event_status(event)
 
                 if event_status == enum.Status.BUSY:
-                    # BUSY takes precedence, return immediately
+                    # BUSY takes highest precedence, return immediately
                     return enum.Status.BUSY
+
+                if event_status == enum.Status.OUTOFOFFICE:
+                    has_outofoffice = True
+
+                if event_status == enum.Status.WORKINGELSEWHERE:
+                    has_workingelsewhere = True
 
                 if event_status == enum.Status.TENTATIVE:
                     has_tentative = True
                 # FREE events don't affect the result
 
-            # If we had any tentative events (but no busy), return TENTATIVE
+            # Return the highest precedence status found
+            # OUTOFOFFICE > WORKINGELSEWHERE > TENTATIVE > FREE
+            if has_outofoffice:
+                return enum.Status.OUTOFOFFICE
+
+            if has_workingelsewhere:
+                return enum.Status.WORKINGELSEWHERE
+
             if has_tentative:
                 return enum.Status.TENTATIVE
 

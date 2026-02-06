@@ -1,5 +1,5 @@
 """Status-Light
-(c) 2020-2023 Nick Warner
+(c) 2020-2026 Nick Warner
 https://github.com/portableprogrammer/Status-Light/
 
 Main Application Entry Point
@@ -21,7 +21,7 @@ from sources.calendar import google, ics, office365
 # 48 - Add Slack support
 from sources.collaboration import slack, webex
 from targets import tuya, virtual
-from utility import enum, env, util
+from utility import enum, env, util, precedence
 
 
 class StatusLight:
@@ -234,41 +234,28 @@ class StatusLight:
                     # 74: Log enums as names, not values
                     self.logger.debug(logger_string.lstrip().rstrip(' |'))
 
-                    # TODO: Now that we have more than one calendar-based status source,
-                    # build a real precedence module for these
-                    # Compare statii and pick a winner
-                    # Collaboration status always wins except in specific scenarios
-                    # Webex currently takes precendence over Slack
-                    self.current_status = webex_status
-                    if (webex_status == enum.Status.UNKNOWN or
-                            webex_status in self.local_env.off_status):
-                        # 74: Log enums as names, not values
-                        self.logger.debug('Using slack_status: %s',
-                                     slack_status.name.lower())
-                        # Fall through to Slack
-                        self.current_status = slack_status
+                    # Build input dictionaries from retrieved statuses
+                    collaboration_statuses = {}
+                    if enum.StatusSource.WEBEX in self.local_env.selected_sources:
+                        collaboration_statuses[enum.StatusSource.WEBEX] = webex_status
+                    if enum.StatusSource.SLACK in self.local_env.selected_sources:
+                        collaboration_statuses[enum.StatusSource.SLACK] = slack_status
 
-                    if (self.current_status in self.local_env.available_status or
-                        self.current_status in self.local_env.off_status) \
-                        and (office_status not in self.local_env.off_status
-                             or google_status not in self.local_env.off_status
-                             or ics_status not in self.local_env.off_status):
+                    calendar_statuses = {}
+                    if enum.StatusSource.OFFICE365 in self.local_env.selected_sources:
+                        calendar_statuses[enum.StatusSource.OFFICE365] = office_status
+                    if enum.StatusSource.GOOGLE in self.local_env.selected_sources:
+                        calendar_statuses[enum.StatusSource.GOOGLE] = google_status
+                    if enum.StatusSource.ICS in self.local_env.selected_sources:
+                        calendar_statuses[enum.StatusSource.ICS] = ics_status
 
-                        self.logger.debug('Using calendar-based status')
-                        # Office should take precedence over Google, Google over ICS
-                        # 74: Log enums as names, not values
-                        if office_status != enum.Status.UNKNOWN:
-                            self.logger.debug('Using office_status: %s',
-                                         office_status.name.lower())
-                            self.current_status = office_status
-                        elif google_status != enum.Status.UNKNOWN:
-                            self.logger.debug('Using google_status: %s',
-                                         google_status.name.lower())
-                            self.current_status = google_status
-                        else:
-                            self.logger.debug('Using ics_status: %s',
-                                         ics_status.name.lower())
-                            self.current_status = ics_status
+                    # Call precedence module to select winning status
+                    self.current_status, winning_source = precedence.select_status(
+                        collaboration_statuses,
+                        calendar_statuses,
+                        self.local_env.off_status,
+                        self.local_env.available_status
+                    )
 
                     status_changed = False
                     if self.last_status != self.current_status:

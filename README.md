@@ -484,7 +484,9 @@ Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-o
 
 Status-Light uses the [icalendar](https://github.com/collective/icalendar) and [recurring-ical-events](https://github.com/niccokunzmann/python-recurring-ical-events) libraries to parse ICS files. These libraries correctly handle recurring events and cross-timezone event matching (e.g., a Pacific time event will be correctly detected when running in Mountain time).
 
-Status-Light's ICS source implements RFC 5545 compliant status detection based on the `TRANSP` (transparency) and `STATUS` properties of calendar events:
+Status-Light's ICS source implements **RFC 5545 compliant** status detection based on the `TRANSP` (transparency) and `STATUS` properties, **plus Microsoft CDO extensions** for enhanced Office 365/Outlook compatibility:
+
+**Standard RFC 5545 Properties:**
 
 | Event Properties | Status-Light Status |
 |-----------------|---------------------|
@@ -493,7 +495,19 @@ Status-Light's ICS source implements RFC 5545 compliant status detection based o
 | `STATUS=TENTATIVE` | `tentative` (maps to BUSY-TENTATIVE in RFC terms) |
 | `STATUS=CONFIRMED` or unset | `busy` (default blocking event) |
 
-When multiple events exist in the lookahead window, the "busiest" status wins: `busy` > `tentative` > `free`.
+**Microsoft CDO Extensions** (Office 365/Outlook ICS exports):
+
+When present, the `X-MICROSOFT-CDO-BUSYSTATUS` property takes precedence and provides more granular status information:
+
+| CDO BUSYSTATUS Property | Status-Light Status |
+|------------------------|---------------------|
+| `FREE` or `0` | `free` |
+| `TENTATIVE` or `1` | `tentative` |
+| `BUSY` or `2` | `busy` |
+| `OOF` or `3` | `outofoffice` (away/out of office) |
+| `WORKINGELSEWHERE` or `4` | `workingelsewhere` (remote work) |
+
+**Status Precedence:** When multiple events exist in the lookahead window, the "busiest" status wins: `busy` > `outofoffice` > `workingelsewhere` > `tentative` > `free`.
 
 #### `ICS_URL`
 

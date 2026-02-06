@@ -61,6 +61,7 @@ Status determination follows a strict hierarchy:
 - `utility/enum.py` - Status enumerations (CollaborationStatus, CalendarStatus, Color)
 - `utility/env.py` - Environment variable parsing and validation
 - `utility/util.py` - Helper functions including `get_env_or_secret()` for Docker secrets
+- `utility/precedence.py` - Status precedence selection logic (selects winning status from multiple collaboration and calendar sources)
 
 ### Output Targets
 
@@ -87,13 +88,13 @@ GitHub Actions (`.github/workflows/docker-image.yml`) builds multi-platform Dock
 - Triggers: PRs to main (build only), pushes with `v*` tags (build + push to Docker Hub)
 - Published to: `portableprogrammer/status-light`
 
-## Documentation
+## Documentation Files
 
-When making changes, update documentation **before** suggesting commits:
+Keep these files in sync with code changes:
 - `README.md` - User-facing documentation for environment variables, setup, and usage
 - `CLAUDE.md` - Developer guidance for Claude Code (this file)
 
-Keep both files in sync with code changes, especially for:
+Update when:
 - New or modified environment variables
 - New dependencies in `requirements.txt`
 - Architecture changes (new sources, targets, utilities)
