@@ -1,5 +1,5 @@
 """Status-Light
-(c) 2020-2023 Nick Warner
+(c) 2020-2026 Nick Warner
 https://github.com/portableprogrammer/Status-Light/
 
 Environment Variable Management
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class Environment:
     """Represents a structured set of environment variables passed to the application."""
     tuya_device: dict = {}
-    tuya_brightness: int = 128
+    light_brightness: int = 50  # Percentage (0-100)
 
     # 32 - SOURCES variable default is wrong
     # 32 Recurred; _parseSource expects a string, not a list. Convert the list to a string.
@@ -50,6 +50,14 @@ class Environment:
     # This is the relative path from status-light.py
     google_credential_store: str = './utility/api/calendar/google'
     google_token_store: str = '~'
+
+    # ICS Calendar support
+    ics_url: str = ''
+    ics_cache_store: str = '~'
+    ics_cache_lifetime: int = 30
+
+    # Target selection
+    target: str = 'tuya'
 
     # 38 - Working Elsewhere isn't handled
     off_status: list[enum.Status] = [enum.Status.INACTIVE,
@@ -122,12 +130,24 @@ class Environment:
             return_value = False
 
         # 41: Replace decorator with utility function
-        self.tuya_brightness = util.try_parse_int(os.environ.get('TUYA_BRIGHTNESS', ''),
-                                                  self.tuya_brightness)
-        # 34 - Better environment variable errors
-        # TUYA_BRIGHTNESS should be within the range 32..255
-        if self.tuya_brightness < 32 or self.tuya_brightness > 255:
-            logger.warning('TUYA_BRIGHTNESS must be between 32 and 255!')
+        # Support both LIGHT_BRIGHTNESS and TUYA_BRIGHTNESS (backward compatibility)
+        brightness_value = os.environ.get('LIGHT_BRIGHTNESS',
+                                          os.environ.get('TUYA_BRIGHTNESS', ''))
+        raw_brightness = util.try_parse_int(brightness_value, self.light_brightness)
+
+        # Auto-detect legacy 0-255 format and convert to percentage
+        # Simple heuristic: Values > 100 are legacy format (percentage is 0-100)
+        if raw_brightness > 100:
+            self.light_brightness = int(raw_brightness * 100 / 255)
+            logger.info('LIGHT_BRIGHTNESS=%d detected as legacy 0-255 format, '
+                       'converted to %d%% (use 0-100 for percentages)',
+                       raw_brightness, self.light_brightness)
+        else:
+            self.light_brightness = raw_brightness
+
+        # Validate brightness is in percentage range (0-100)
+        if self.light_brightness < 0 or self.light_brightness > 100:
+            logger.warning('LIGHT_BRIGHTNESS must be between 0 and 100 (percentage)!')
             return_value = False
 
         return return_value
@@ -180,6 +200,28 @@ class Environment:
         self.google_token_store = os.environ.get('GOOGLE_TOKENSTORE',
                                                  self.google_token_store)
         return ('' not in [self.google_credential_store, self.google_token_store])
+
+    def get_ics(self) -> bool:
+        """Retrieves and validates the `ICS_*` variables."""
+        # ICS_URL is required and may contain secrets
+        self.ics_url = util.get_env_or_secret('ICS_URL', '')
+        self.ics_cache_store = os.environ.get('ICS_CACHESTORE', self.ics_cache_store)
+        self.ics_cache_lifetime = util.try_parse_int(
+            os.environ.get('ICS_CACHELIFETIME', ''),
+            self.ics_cache_lifetime)
+        # Validate cache lifetime is within 5-60 minutes
+        if self.ics_cache_lifetime < 5 or self.ics_cache_lifetime > 60:
+            logger.warning('ICS_CACHELIFETIME must be between 5 and 60 minutes!')
+            self.ics_cache_lifetime = 30
+        return self.ics_url != ''
+
+    def get_target(self) -> bool:
+        """Retrieves and validates the `TARGET` variable."""
+        self.target = os.environ.get('TARGET', self.target).lower()
+        if self.target not in ('tuya', 'virtual'):
+            logger.warning('TARGET must be "tuya" or "virtual"!')
+            return False
+        return True
 
     def get_colors(self) -> bool:
         """Retrieves and validates the `*_COLOR` variables."""

@@ -40,6 +40,7 @@ services:
     image: portableprogrammer/status-light:latest
     environment:
       - "SOURCES=Webex,Office365"
+      - "TARGET=tuya"
       - "AVAILABLE_COLOR=green"
       - "SCHEDULED_COLOR=orange"
       - "BUSY_COLOR=red"
@@ -48,7 +49,7 @@ services:
       - "BUSY_STATUS=call,donotdisturb,meeting,presenting,pending"
       - "OFF_STATUS=inactive,outofoffice,free,unknown"
       - 'TUYA_DEVICE={ "protocol": "3.3", "deviceid": "xxx", "ip": "yyy", "localkey": "zzz" }'
-      - "TUYA_BRIGHTNESS=128"
+      - "LIGHT_BRIGHTNESS=50"
       - "WEBEX_PERSONID=xxx"
       - "WEBEX_BOTID=xxx"
       - "O365_APPID=xxx"
@@ -56,6 +57,9 @@ services:
       - "O365_TOKENSTORE=/data"
       - "GOOGLE_TOKENSTORE=/data"
       - "GOOGLE_CREDENTIALSTORE=/data"
+      - "ICS_URL=https://example.com/calendar.ics"
+      - "ICS_CACHESTORE=/data"
+      - "ICS_CACHELIFETIME=30"
       - "SLACK_USER_ID=xxx"
       - "SLACK_BOT_TOKEN=xxx"
       - "SLACK_CUSTOM_AVAILABLE_STATUS=''"
@@ -125,9 +129,22 @@ secrets:
   - `slack`
   - `office365`
   - `google`
+  - `ics`
 - Default value: `webex,office365`
 
 If specificed, requires at least one of the available options. This will control which services Status-Light uses to determine overall availability status.
+
+---
+
+### `TARGET`
+
+- *Optional*
+- Available values:
+  - `tuya` - Physical Tuya smart bulb (requires `TUYA_DEVICE`)
+  - `virtual` - Virtual light that logs status changes (for testing)
+- Default value: `tuya`
+
+Specifies the output target for status display. Use `virtual` for testing without hardware.
 
 ---
 
@@ -154,6 +171,10 @@ If specificed, requires at least one of the available options. This will control
     - `workingelsewhere`
   - Google
     - `free`
+    - `busy`
+  - ICS
+    - `free`
+    - `tentative`
     - `busy`
 
 #### `AVAILABLE_STATUS`
@@ -204,14 +225,17 @@ if webexStatus == const.Status.unknown or webexStatus in offStatus:
   # Fall through to Slack
   currentStatus = slackStatus
 
-if (currentStatus in availableStatus or currentStatus in offStatus) 
-  and (officeStatus not in offStatus or googleStatus not in offStatus):
+if (currentStatus in availableStatus or currentStatus in offStatus)
+  and (officeStatus not in offStatus or googleStatus not in offStatus
+       or icsStatus not in offStatus):
 
-  # Office 365 currently takes precedence over Google
+  # Office 365 currently takes precedence over Google, Google over ICS
   if (officeStatus != const.Status.unknown):
     currentStatus = officeStatus
-  else:
+  elif (googleStatus != const.Status.unknown):
     currentStatus = googleStatus
+  else:
+    currentStatus = icsStatus
 
 if currentStatus in availableStatus:
   # Get availableColor
@@ -304,11 +328,13 @@ In the example above, the Slack custom status would match (since it is a case-in
 
 ### **Tuya**
 
+**Note:** Tuya configuration is only required when [`TARGET`](#target) is set to `tuya` (the default). If using `TARGET=virtual`, you can skip this section.
+
 #### `TUYA_DEVICE`
 
-- *Required*
+- *Required if [`TARGET`](#target) is `tuya`*
 
-Status-Light requires a [Tuya](https://www.tuya.com/) device, which are white-boxed and sold under many brand names. For example, the Tuya light working in the current environment is an [Above Lights](http://alabovelights.com/) [Smart Bulb 9W, model AL1](http://alabovelights.com/pd.jsp?id=17).
+Status-Light supports [Tuya](https://www.tuya.com/) devices, which are white-boxed and sold under many brand names. For example, the Tuya light working in the current environment is an [Above Lights](http://alabovelights.com/) [Smart Bulb 9W, model AL1](http://alabovelights.com/pd.jsp?id=17).
 
 Status-Light uses the [tuyaface](https://github.com/TradeFace/tuyaface/) module for Tuya communication.
 
@@ -326,13 +352,19 @@ Example `TUYA_DEVICE` value:
 
 **Note:** Status-Light will accept an FQDN instead of IP, as long as the name can be resolved. Tuya devices will typically register themselves with the last 6 digits of the device ID, for example `ESP_xxxxxx.local`.
 
-#### `TUYA_BRIGHTNESS`
+#### `LIGHT_BRIGHTNESS`
 
 - *Optional*
-- Acceptable range: `32`-`255`
-- Default value: `128`
+- Acceptable range: `0`-`100` (percentage)
+- Default value: `50`
 
-Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100% (though Tuya lights typically don't accept a brightness value below `32`). Status-Light defaults to 50% brightness, `128`.
+Set the brightness of your RGB light as a percentage (0-100%). Status-Light defaults to 50% brightness.
+
+**Legacy Format Auto-Detection:** For backward compatibility, values above 100 (or in the range 32-100) are automatically detected as the legacy 0-255 format and converted to percentage. For example, `LIGHT_BRIGHTNESS=128` is auto-detected and converted to 50%. To avoid confusion, use percentage values (0-100) for new configurations.
+
+**Note:** The legacy format was specific to Tuya's device scale. The new percentage format works with all light targets and is more intuitive.
+
+**Backward Compatibility:** `TUYA_BRIGHTNESS` is still supported as an alias for `LIGHT_BRIGHTNESS` but is deprecated. Use `LIGHT_BRIGHTNESS` for new configurations.
 
 ---
 
@@ -449,6 +481,70 @@ If you are running Status-Light locally, the first time the authentication flow 
 Since Google has [deprecated](https://developers.googleblog.com/2022/02/making-oauth-flows-safer.html#instructions-oob) OOB authentication flows for headless devices, if you are running Status-Light headless (e.g. in a Docker container), you will need to obtain your `token.json` file manually and place it into the directory specified here.
 
 **Note:** This path is directory only. Status-Light expects to persist a file within the directory supplied.
+
+---
+
+### **ICS**
+
+**Note:** See [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) to configure lookahead timing for Calendar sources.
+
+Status-Light uses the [icalendar](https://github.com/collective/icalendar) and [recurring-ical-events](https://github.com/niccokunzmann/python-recurring-ical-events) libraries to parse ICS files. These libraries correctly handle recurring events and cross-timezone event matching (e.g., a Pacific time event will be correctly detected when running in Mountain time).
+
+Status-Light's ICS source implements **RFC 5545 compliant** status detection based on the `TRANSP` (transparency) and `STATUS` properties, **plus Microsoft CDO extensions** for enhanced Office 365/Outlook compatibility:
+
+**Standard RFC 5545 Properties:**
+
+| Event Properties | Status-Light Status |
+|-----------------|---------------------|
+| `TRANSP=TRANSPARENT` | `free` (event doesn't block time) |
+| `STATUS=CANCELLED` | `free` (event was cancelled) |
+| `STATUS=TENTATIVE` | `tentative` (maps to BUSY-TENTATIVE in RFC terms) |
+| `STATUS=CONFIRMED` or unset | `busy` (default blocking event) |
+
+**Microsoft CDO Extensions** (Office 365/Outlook ICS exports):
+
+When present, the `X-MICROSOFT-CDO-BUSYSTATUS` property takes precedence and provides more granular status information:
+
+| CDO BUSYSTATUS Property | Status-Light Status |
+|------------------------|---------------------|
+| `FREE` or `0` | `free` |
+| `TENTATIVE` or `1` | `tentative` |
+| `BUSY` or `2` | `busy` |
+| `OOF` or `3` | `outofoffice` (away/out of office) |
+| `WORKINGELSEWHERE` or `4` | `workingelsewhere` (remote work) |
+
+**Status Precedence:** When multiple events exist in the lookahead window, the "busiest" status wins: `busy` > `outofoffice` > `workingelsewhere` > `tentative` > `free`.
+
+#### `ICS_URL`
+
+- *Required if `ics` is present in [`SOURCES`](#sources)*
+
+The URL to an ICS (iCalendar) file. This can be any publicly accessible URL that returns a valid `.ics` file, such as:
+- A shared Google Calendar ICS link
+- An Office 365 published calendar
+- Any other iCalendar-compatible calendar export
+
+Status-Light will fetch this file periodically (controlled by `ICS_CACHELIFETIME`) and check for events within the [`CALENDAR_LOOKAHEAD`](#calendar_lookahead) window.
+
+**Docker Secrets:** This variable can instead be specified in a secrets file, using the `ICS_URL_FILE` variable.
+
+#### `ICS_CACHESTORE`
+
+- *Optional, only valid if `ics` is present in [`SOURCES`](#sources)*
+- Acceptable value: Any writable location on disk, e.g. `/path/to/cache/`
+- Default value: `~`
+
+Defines a writable location on disk where the cached ICS file is stored.
+
+**Note:** This path is directory only. Status-Light will persist a file named `status-light-ics-cache.ics` within the directory supplied.
+
+#### `ICS_CACHELIFETIME`
+
+- *Optional, only valid if `ics` is present in [`SOURCES`](#sources)*
+- Acceptable range: `5`-`60`
+- Default value: `30`
+
+Set the number of minutes the cached ICS file remains valid before being re-fetched from the URL. A lower value means more frequent updates but more network requests.
 
 ---
 
