@@ -65,7 +65,10 @@ Status determination follows a strict hierarchy:
 
 ### Output Targets
 
-- `targets/tuya.py` - Controls Tuya smart bulbs with retry logic and connection management
+All targets implement the `LightTarget` abstract interface defined in `targets/base.py`:
+
+- `targets/base.py` - Abstract base class defining the light target interface (`set_color()`, `turn_off()`)
+- `targets/tuya.py` - Tuya smart bulbs (locked to COLOR mode, handles retry logic and DPS format conversion)
 - `targets/virtual.py` - Virtual light for testing (logs status changes, no hardware required)
 
 ## Configuration
@@ -76,6 +79,7 @@ All configuration is via environment variables (no config files). Key categories
 - **Target:** `TARGET` (tuya or virtual; default: tuya)
 - **Authentication:** Platform-specific tokens/IDs (e.g., `WEBEX_PERSONID`, `SLACK_BOT_TOKEN`, `O365_APPID`, `ICS_URL`)
 - **Colors:** `AVAILABLE_COLOR`, `SCHEDULED_COLOR`, `BUSY_COLOR` (predefined names or 24-bit hex)
+- **Light:** `LIGHT_BRIGHTNESS` (0-100 percentage; default: 50; auto-detects legacy 0-255 format)
 - **Device:** `TUYA_DEVICE` (JSON with protocol, deviceid, ip, localkey; required only when TARGET=tuya)
 - **Behavior:** `SLEEP_SECONDS`, `CALENDAR_LOOKAHEAD`, `LOGLEVEL`, `ACTIVE_DAYS`, `ACTIVE_HOURS_*`
 

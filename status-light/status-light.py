@@ -153,7 +153,6 @@ class StatusLight:
         if self.local_env.target == 'virtual':
             self.logger.info('Using virtual light target')
             self.light = virtual.VirtualLight()
-            self.light.get_status()
         else:
             # Tuya target (requires TUYA_DEVICE)
             if not self.local_env.get_tuya():
@@ -162,12 +161,6 @@ class StatusLight:
                 sys.exit(1)
             self.light.device = self.local_env.tuya_device
             self.logger.debug('Retrieved TUYA_DEVICE variable: %s', self.light.device)
-            tuya_status = self.light.get_status()
-            self.logger.debug('Found initial Tuya status: %s', tuya_status)
-            if not tuya_status:
-                self.logger.error(
-                    'Could not connect to Tuya device!')
-                sys.exit(1)
 
     def run(self):
         """Runs the main loop of the application"""
@@ -284,13 +277,13 @@ class StatusLight:
                     if not already_handled_inactive_hours:
                         self.logger.info(
                             'Outside of active hours, transitioning to off')
-                        last_transition_result = self.light.off()
+                        last_transition_result = self.light.turn_off()
                         self.last_status = enum.Status.UNKNOWN
                         already_handled_inactive_hours = True
 
                     # 40: If the last transition failed, try again
                     if not last_transition_result:
-                        last_transition_result = self.light.off()
+                        last_transition_result = self.light.turn_off()
 
                 # Sleep for a few seconds
                 time.sleep(self.local_env.sleep_seconds)
@@ -303,7 +296,7 @@ class StatusLight:
                 self.logger.exception(ex)
 
         self.logger.debug('Turning light off')
-        self.light.off()
+        self.light.turn_off()
 
     def _transition_status(self) -> bool:
         """Internal Helper Method to determine the correct color for the light
@@ -324,18 +317,17 @@ class StatusLight:
             color = self.local_env.busy_color
 
         if color is not None:
-            return_value = self.light.set_status(
-                enum.TuyaMode.COLOR, color, self.local_env.tuya_brightness)
+            return_value = self.light.set_color(color, self.local_env.light_brightness)
         # OffStatus has the lowest priority, so only check it if none of the others are valid
         elif self.current_status in self.local_env.off_status:
-            return_value = self.light.off()
+            return_value = self.light.turn_off()
         # In the case that we made it here without a valid state,
         # just turn the light off and warn about it
         # 74: Log enums as names, not values
         else:
             self.logger.warning('Called with an invalid status: %s',
                            self.current_status.name.lower())
-            return_value = self.light.off()
+            return_value = self.light.turn_off()
 
         return return_value
 

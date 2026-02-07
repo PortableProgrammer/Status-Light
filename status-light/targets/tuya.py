@@ -13,62 +13,91 @@ import logging
 import tuyaface
 
 # Project imports
-from utility import enum
+from targets.base import LightTarget
 
 logger = logging.getLogger(__name__)
 
 
-class TuyaLight:
-    """Represents a Tuya device, utilizing `tuyaface` for connections."""
+class TuyaLight(LightTarget):
+    """Represents a Tuya device, utilizing `tuyaface` for connections.
+
+    Implements the LightTarget interface for Tuya-compatible RGB bulbs.
+    Always uses COLOR mode internally (not white temperature mode).
+    """
     device: dict
 
-    def on(self):  # pylint: disable=invalid-name
-        """Turns on the light."""
-        return self._set_status({'1': True})
+    def set_color(self, color: str, brightness: int) -> bool:
+        """Set light to specified color and brightness.
 
-    def off(self):
-        """Turns off the light."""
-        return self._set_status({'1': False})
+        Args:
+            color: 6-character hex RGB color (e.g., 'ff0000' for red)
+            brightness: Brightness percentage 0-100
 
-    def get_status(self):
-        """Retrieves the current status of the Tuya device.
-        May return an error if the device is unavailable."""
-        return tuyaface.status(self.device)
+        Returns:
+            True if successful, False otherwise
 
-    def set_status(self, mode: enum.TuyaMode = enum.TuyaMode.WHITE,
-                   color: str = enum.Color.WHITE.value, brightness: int = 128) -> bool:
-        """Sends a full command to the Tuya device
-
-        `mode`: `white`, `colour`
-        `color`: A hex-formatted RGB color (e.g. `rrggbb`)
-        `brightness`: An `int` between 0 and 255 inclusive, though the lowest usable threshold is 32
+        Note:
+            Tuya devices require specific DPS (Data Point) format. This method
+            automatically converts the percentage brightness to Tuya's 0-255 scale,
+            converts the hex color to Tuya's expected format, and locks the device
+            to COLOR mode.
         """
-        # DPS:
+        # Validate inputs using base class helpers
+        if not self.validate_color(color):
+            logger.warning('Invalid color format: %s (expected 6-char hex)', color)
+            return False
+
+        if not self.validate_brightness(brightness):
+            logger.warning('Invalid brightness: %s (expected 0-100 percentage)', brightness)
+            return False
+
+        # Convert percentage (0-100) to Tuya's device scale (0-255)
+        # Note: Tuya devices have a minimum usable threshold around 32-64
+        device_brightness = int(brightness * 255 / 100)
+
+        # Tuya DPS (Data Points):
         # 1: Power, bool
         # 2: Mode, 'white' or 'colour'
-        # 3: Brightness, int 0-255, but the lowest usable threshold is between 32 and 64
-        # 5: Color, 'rrggbb0000ffff'
+        # 3: Brightness, int 0-255 (lowest usable threshold is 32-64)
+        # 5: Color, 'rrggbb0000ffff' (RGB + HSV suffix required by device)
 
-        # Ensure the color has all the bits we care about
+        # Convert simple hex RGB to Tuya's DPS format
         if not color.endswith('0000ffff'):
             color = color + '0000ffff'
 
-        # Light must be on (so we'll do that first)
-        # Brightness should be next
-        # Color must be before Mode
-
+        # Command order matters: Power → Brightness → Color → Mode
         dps: dict = {
-            '1': True,
-            '3': brightness,
-            '5': color,
-            '2': mode.value
+            '1': True,               # Power on
+            '3': device_brightness,  # Set brightness (converted to 0-255)
+            '5': color,              # Set color (with Tuya suffix)
+            '2': 'colour'            # Lock to COLOR mode (not white temperature)
         }
 
-        return_vaue = self._set_status(dps)
-        return return_vaue
+        return self._set_dps(dps)
 
-    def _set_status(self, dps: dict, retry: int = 5):
-        """Internal Helper Method for `set_status`"""
+    def turn_off(self) -> bool:
+        """Turn the light completely off.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self._set_dps({'1': False})
+
+    def _set_dps(self, dps: dict, retry: int = 5) -> bool:
+        """Internal helper method for sending DPS commands to Tuya device.
+
+        Args:
+            dps: Dictionary of Data Point values to set
+            retry: Number of retry attempts on failure (default: 5)
+
+        Returns:
+            True if successful, False otherwise
+
+        Note:
+            Implements retry logic with 1-second delays between attempts.
+            Clears the tuyaface connection cache after each attempt to avoid
+            broken pipe errors.
+        """
         # We sometimes get a connection reset, or other errors, so let's retry after a second
         count = 0
         status = False

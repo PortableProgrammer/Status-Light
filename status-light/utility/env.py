@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class Environment:
     """Represents a structured set of environment variables passed to the application."""
     tuya_device: dict = {}
-    tuya_brightness: int = 128
+    light_brightness: int = 50  # Percentage (0-100)
 
     # 32 - SOURCES variable default is wrong
     # 32 Recurred; _parseSource expects a string, not a list. Convert the list to a string.
@@ -130,12 +130,24 @@ class Environment:
             return_value = False
 
         # 41: Replace decorator with utility function
-        self.tuya_brightness = util.try_parse_int(os.environ.get('TUYA_BRIGHTNESS', ''),
-                                                  self.tuya_brightness)
-        # 34 - Better environment variable errors
-        # TUYA_BRIGHTNESS should be within the range 32..255
-        if self.tuya_brightness < 32 or self.tuya_brightness > 255:
-            logger.warning('TUYA_BRIGHTNESS must be between 32 and 255!')
+        # Support both LIGHT_BRIGHTNESS and TUYA_BRIGHTNESS (backward compatibility)
+        brightness_value = os.environ.get('LIGHT_BRIGHTNESS',
+                                          os.environ.get('TUYA_BRIGHTNESS', ''))
+        raw_brightness = util.try_parse_int(brightness_value, self.light_brightness)
+
+        # Auto-detect legacy 0-255 format and convert to percentage
+        # Simple heuristic: Values > 100 are legacy format (percentage is 0-100)
+        if raw_brightness > 100:
+            self.light_brightness = int(raw_brightness * 100 / 255)
+            logger.info('LIGHT_BRIGHTNESS=%d detected as legacy 0-255 format, '
+                       'converted to %d%% (use 0-100 for percentages)',
+                       raw_brightness, self.light_brightness)
+        else:
+            self.light_brightness = raw_brightness
+
+        # Validate brightness is in percentage range (0-100)
+        if self.light_brightness < 0 or self.light_brightness > 100:
+            logger.warning('LIGHT_BRIGHTNESS must be between 0 and 100 (percentage)!')
             return_value = False
 
         return return_value

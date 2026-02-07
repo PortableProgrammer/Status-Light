@@ -49,7 +49,7 @@ services:
       - "BUSY_STATUS=call,donotdisturb,meeting,presenting,pending"
       - "OFF_STATUS=inactive,outofoffice,free,unknown"
       - 'TUYA_DEVICE={ "protocol": "3.3", "deviceid": "xxx", "ip": "yyy", "localkey": "zzz" }'
-      - "TUYA_BRIGHTNESS=128"
+      - "LIGHT_BRIGHTNESS=50"
       - "WEBEX_PERSONID=xxx"
       - "WEBEX_BOTID=xxx"
       - "O365_APPID=xxx"
@@ -352,13 +352,19 @@ Example `TUYA_DEVICE` value:
 
 **Note:** Status-Light will accept an FQDN instead of IP, as long as the name can be resolved. Tuya devices will typically register themselves with the last 6 digits of the device ID, for example `ESP_xxxxxx.local`.
 
-#### `TUYA_BRIGHTNESS`
+#### `LIGHT_BRIGHTNESS`
 
-- *Optional, only valid if [`TARGET`](#target) is `tuya`*
-- Acceptable range: `32`-`255`
-- Default value: `128`
+- *Optional*
+- Acceptable range: `0`-`100` (percentage)
+- Default value: `50`
 
-Set the brightness of your Tuya light. This is an 8-bit `integer` corresponding to a percentage from 0%-100% (though Tuya lights typically don't accept a brightness value below `32`). Status-Light defaults to 50% brightness, `128`.
+Set the brightness of your RGB light as a percentage (0-100%). Status-Light defaults to 50% brightness.
+
+**Legacy Format Auto-Detection:** For backward compatibility, values above 100 (or in the range 32-100) are automatically detected as the legacy 0-255 format and converted to percentage. For example, `LIGHT_BRIGHTNESS=128` is auto-detected and converted to 50%. To avoid confusion, use percentage values (0-100) for new configurations.
+
+**Note:** The legacy format was specific to Tuya's device scale. The new percentage format works with all light targets and is more intuitive.
+
+**Backward Compatibility:** `TUYA_BRIGHTNESS` is still supported as an alias for `LIGHT_BRIGHTNESS` but is deprecated. Use `LIGHT_BRIGHTNESS` for new configurations.
 
 ---
 
