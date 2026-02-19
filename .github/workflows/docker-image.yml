@@ -1,73 +1,114 @@
-name: buildx
+name: Docker Build
 
 on:
   pull_request:
     branches: main
   push:
-    branches: main
+    branches:
+      - main
+      - dev
     tags:
       - v*
 
+# Cancel in-progress builds for same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Minimal permissions for GITHUB_TOKEN
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 jobs:
-  buildx:
+  build:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v4
-      -
-        name: Prepare
-        id: prepare
-        run: |
-          DOCKER_IMAGE=portableprogrammer/status-light
-          DOCKER_PLATFORMS=linux/amd64,linux/arm/v7,linux/arm64
-          VERSION=edge
+      - name: Checkout
+        uses: actions/checkout@v4  # 2026-02-05: v4.2.2
 
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-          fi
-
-          TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
-          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?$ ]]; then
-            TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest"
-          fi
-
-          echo "docker_image=${DOCKER_IMAGE}" >> "$GITHUB_ENV"
-          echo "version=${VERSION}" >> "$GITHUB_ENV"
-          echo "buildx_args=--platform ${DOCKER_PLATFORMS} --build-arg VERSION=${VERSION} --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=${GITHUB_SHA::8} ${TAGS} --file ./Dockerfiles/Dockerfile ./" >> "$GITHUB_ENV"
-      -
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5  # 2026-02-05: v5.7.0
         with:
-          # Enable Docker layer caching
-          buildkitd-flags: --debug
-      -
-        name: Docker Buildx (build)
+          images: portableprogrammer/status-light
+          tags: |
+            # Dev branch gets 'dev' tag (for local builds, not pushed)
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/dev' }}
+            # Main branch gets 'edge' tag
+            type=edge,branch=main
+            # Tag releases with semver
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+          labels: |
+            org.opencontainers.image.title=Status-Light
+            org.opencontainers.image.description=Multi-platform presence status indicator for smart RGB lights
+            org.opencontainers.image.vendor=PortableProgrammer
+            org.opencontainers.image.licenses=MIT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3  # 2026-02-05: v3.2.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3  # 2026-02-05: v3.7.1
+
+      - name: Docker Hub login
+        if: github.event_name != 'pull_request' && github.ref != 'refs/heads/dev'
+        uses: docker/login-action@v3  # 2026-02-05: v3.3.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6  # 2026-02-05: v6.10.0
+        with:
+          context: .
+          file: ./Dockerfiles/Dockerfile
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          push: ${{ github.event_name != 'pull_request' && github.ref != 'refs/heads/dev' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GitHub Actions cache for faster builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Supply chain security
+          provenance: mode=max
+          sbom: true
+
+      - name: Docker Hub description
+        if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
+        uses: peter-evans/dockerhub-description@v4  # 2026-02-05: v4.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: portableprogrammer/status-light
+          short-description: Multi-platform presence status indicator for smart RGB lights
+        continue-on-error: true
+
+      - name: Verify multi-arch manifest
+        if: github.event_name != 'pull_request' && github.ref != 'refs/heads/dev'
         run: |
-          docker buildx build --output "type=image,push=false" ${{ env.buildx_args }}
-      -
-        name: Docker Login
-        if: success() && github.event_name != 'pull_request'
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          docker buildx imagetools inspect ${{ steps.meta.outputs.tags }} | tee manifest.txt
+          echo "## Multi-Architecture Manifest" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat manifest.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Build summary
+        if: always()
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
-      -
-        name: Docker Buildx (push)
-        if: success() && github.event_name != 'pull_request'
-        run: |
-          docker buildx build --output "type=image,push=true" ${{ env.buildx_args }}
-      -
-        name: Docker Check Manifest
-        if: always() && github.event_name != 'pull_request'
-        run: |
-          docker run --rm mplatform/mquery ${{ env.docker_image }}:${{ env.version }}
-      -
-        name: Clear
-        if: always() && github.event_name != 'pull_request'
-        run: |
-          rm -f ${HOME}/.docker/config.json
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Event:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ref:** ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platforms:** linux/amd64, linux/arm/v7, linux/arm64" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tags:** ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "- **Digest:** ${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Pushed:** ✅ Yes" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Pushed:** ⏭️  Skipped (PR)" >> $GITHUB_STEP_SUMMARY
+          fi
